@@ -56,7 +56,7 @@ train_df = train_df[features_considered]
 val_df = val_df[features_considered]
 test_df = val_df[features_considered]
 
-window = window_generator.WindowGenerator(5, 1, 1, train_df.columns, ["FIT101"])
+window = window_generator.WindowGenerator(5, 1, 1, train_df.columns, features_considered)
 
 train = window.make_dataset(train_df)
 val = window.make_dataset(val_df)
@@ -72,6 +72,12 @@ model = autoencoder.compile_fit(BEST_PARAMS)
 #   print(inputs[n, :, plot_col_index].numpy())
 #   prediction = model.predict(inputs)
 #   print(prediction[n, :, plot_col_index])
+
+# inputs, labels = next(iter(train))
+# plot_col_index = window.column_indices["FIT101"]
+# prediction = model.predict(inputs)
+# print(prediction[0, :, plot_col_index])
+# for n in range(len(inputs)):
 
 result = model.evaluate(test)
 for i in range (len(result)):
