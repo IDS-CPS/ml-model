@@ -126,4 +126,4 @@ true_outlier = [df.anomaly for df in list_of_df]
 
 predicted_outlier[0].plot(figsize=(12, 3), label='predictions', marker='o', markersize=5)
 true_outlier[0].plot(marker='o', markersize=2)
-plt.savefig('/plot/autoencoder.png')
+plt.savefig('plot/autoencoder.png')
