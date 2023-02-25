@@ -69,7 +69,7 @@ class Autoencoder():
     return model
 
   def fit(self, model, param):
-    early_stopping = EarlyStopping(monitor='val_loss', patience=3, mode='min')
+    early_stopping = EarlyStopping(monitor='val_loss', patience=10, mode='min')
 
     model.fit(
       self.train,

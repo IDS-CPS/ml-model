@@ -83,5 +83,5 @@ result = model.evaluate(test)
 for i in range (len(result)):
   print(f"{model.metrics_names[i]}: {result[i]}")
 
-model.save('model/autoencoder')
+model.save('model/autoencoder.h5')
 
