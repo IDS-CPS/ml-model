@@ -1,6 +1,7 @@
 import pandas as pd
 import window_generator
 import tensorflow as tf
+import logging
 
 from argparse import ArgumentParser
 from scipy import stats
@@ -9,6 +10,8 @@ from sklearn.preprocessing import StandardScaler
 parser = ArgumentParser()
 parser.add_argument("-p", "--path")
 parser.add_argument("-e", "--epoch", default=1, type=int)
+
+logging.basicConfig(filename="logs/cnn_2/cnn.log", level=logging.INFO)
 
 args = parser.parse_args()
 
@@ -57,12 +60,6 @@ train_df = train_df[features_considered]
 val_df = val_df[features_considered]
 test_df = val_df[features_considered]
 
-window = window_generator.WindowGenerator(5, 1, 1, train_df.columns, ['FIT101'])
-
-train = window.make_dataset(train_df)
-val = window.make_dataset(val_df)
-test = window.make_dataset(test_df)
-
 conv_model = tf.keras.Sequential([
     tf.keras.layers.Conv1D(filters=32,
                            kernel_size=(5,),
@@ -71,18 +68,28 @@ conv_model = tf.keras.Sequential([
     tf.keras.layers.Dense(units=1),
 ])
 
-early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
-                                                    patience=10,
-                                                    mode='min')
+for feature in features_considered:
+  window = window_generator.WindowGenerator(24, 1, 24, train_df.columns, [feature])
 
-conv_model.compile(loss=tf.keras.losses.MeanSquaredError(),
-            optimizer=tf.keras.optimizers.Adam(),
-            metrics=[tf.keras.metrics.MeanAbsoluteError()])
+  train = window.make_dataset(train_df)
+  val = window.make_dataset(val_df)
+  test = window.make_dataset(test_df)
 
-history = conv_model.fit(train, epochs=args.epoch,
-                    validation_data=val,
-                    callbacks=[early_stopping])
+  # early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss',
+  #                                                     patience=10,
+  #                                                     mode='min')
 
-print(conv_model.evaluate(val))
+  csv_logger = tf.keras.callbacks.CSVLogger(f"logs/cnn_2/{feature}.log")
 
-conv_model.save('model/cnn.h5')
+  conv_model.compile(loss=tf.keras.losses.MeanSquaredError(),
+              optimizer=tf.keras.optimizers.Adam(),
+              metrics=[tf.keras.metrics.MeanAbsoluteError()])
+
+  history = conv_model.fit(train, epochs=args.epoch,
+                      validation_data=val,
+                      callbacks=[csv_logger])
+
+  evaluation = conv_model.evaluate(test)
+  logging.info(f"{feature}: {dict(zip(conv_model.metrics_names, evaluation))}")
+
+  conv_model.save(f'model/cnn_2/{feature}.h5')
