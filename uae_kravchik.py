@@ -6,7 +6,7 @@ import tensorflow as tf
 from argparse import ArgumentParser
 from autoencoder import Autoencoder
 from scipy import stats
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras import Model, layers
 
 class Encoder(layers.Layer):
@@ -62,30 +62,13 @@ parser.add_argument("-e", "--epoch", default=1, type=int)
 args = parser.parse_args()
 
 df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
-date_time = pd.to_datetime(df.pop('Timestamp'))
 
-df = df.set_index(date_time)
 df = df.drop("Normal/Attack", axis=1)
+df = df.drop("Timestamp", axis=1)
 
 n = len(df)
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
-
-scaler = StandardScaler()
-scaler.fit(train_df)
-columns = df.columns
-
-data = scaler.transform(train_df)
-index = train_df.index
-train_df = pd.DataFrame(data)
-train_df.index = index
-train_df.columns = columns
-
-data = scaler.transform(test_df)
-index = test_df.index
-test_df = pd.DataFrame(data)
-test_df.index = index
-test_df.columns = columns
 
 features_considered = []
 for column in df.columns:
@@ -94,6 +77,22 @@ for column in df.columns:
     features_considered.append(column)
 
 print("Features used: ", features_considered)
+print(len(features_considered))
+
+train_df = train_df[features_considered]
+test_df = test_df[features_considered]
+
+scaler = MinMaxScaler()
+scaler.fit(train_df)
+columns = train_df.columns
+
+data = scaler.transform(train_df)
+train_df = pd.DataFrame(data)
+train_df.columns = columns
+
+data = scaler.transform(test_df)
+test_df = pd.DataFrame(data)
+test_df.columns = columns
 
 TIME_STEPS = 24
 # Generated training sequences for use in the model.
