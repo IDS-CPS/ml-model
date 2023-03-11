@@ -1,10 +1,8 @@
 import pandas as pd
 import numpy as np
-import window_generator
 import tensorflow as tf
 
 from argparse import ArgumentParser
-from autoencoder import Autoencoder
 from scipy import stats
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from tensorflow.keras import Model, layers
@@ -82,7 +80,7 @@ print(len(features_considered))
 train_df = train_df[features_considered]
 test_df = test_df[features_considered]
 
-scaler = MinMaxScaler()
+scaler = StandardScaler()
 scaler.fit(train_df)
 columns = train_df.columns
 
@@ -127,6 +125,6 @@ model.fit(
 
 loss, acc = model.evaluate(x_test, x_test)
 
-print(f"Loss: {loss}, Accuracy: {acc}")
+print(f"Loss: {loss}, Mean Absolute Error: {acc}")
 
-model.save('model/autoencoder-kravchik-v2')
+model.save('model/autoencoder-kravchik-v2-standar-scaler')
