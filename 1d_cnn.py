@@ -13,7 +13,7 @@ parser.add_argument("-e", "--epoch", default=1, type=int)
 
 args = parser.parse_args()
 
-df = pd.read_csv("dataset/swat-minimized.csv", delimiter=";", decimal=",")
+df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
 
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
