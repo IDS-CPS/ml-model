@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
+import joblib
 
 from argparse import ArgumentParser
 from scipy import stats
@@ -60,7 +61,7 @@ parser.add_argument("-e", "--epoch", default=1, type=int)
 args = parser.parse_args()
 
 df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
-
+df = df[16000:]
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 
@@ -80,19 +81,20 @@ print(len(features_considered))
 train_df = train_df[features_considered]
 test_df = test_df[features_considered]
 
-scaler = StandardScaler()
+scaler = MinMaxScaler()
 scaler.fit(train_df)
 columns = train_df.columns
 
-data = scaler.transform(train_df)
-train_df = pd.DataFrame(data)
-train_df.columns = columns
+train_data = scaler.transform(train_df)
+test_data = scaler.transform(test_df)
 
-data = scaler.transform(test_df)
-test_df = pd.DataFrame(data)
-test_df.columns = columns
+mean = np.mean(train_data, axis=0)
+std = np.std(train_data, axis=0)
 
-TIME_STEPS = 24
+np.save('uae_mean.npy', mean)
+np.save('uae_std.npy', std)
+
+TIME_STEPS = 40
 # Generated training sequences for use in the model.
 def create_sequences(values, time_steps=TIME_STEPS):
     output = []
@@ -101,8 +103,8 @@ def create_sequences(values, time_steps=TIME_STEPS):
     return np.stack(output)
 
 
-x_train = create_sequences(train_df.values)
-x_test = create_sequences(test_df.values)
+x_train = create_sequences(train_data)
+x_test = create_sequences(test_data)
 
 print("Training input shape: ", x_train.shape)
 
@@ -123,8 +125,8 @@ model.fit(
   callbacks=[early_stopping]
 )
 
-loss, acc = model.evaluate(x_test, x_test)
+loss, mae = model.evaluate(x_test, x_test)
 
-print(f"Loss: {loss}, Mean Absolute Error: {acc}")
+print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
-model.save('model/autoencoder-kravchik-v2-standar-scaler')
+model.save('model/uae-kravchik')

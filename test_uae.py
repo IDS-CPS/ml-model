@@ -21,7 +21,6 @@ df = df[features_considered]
 
 scaler = joblib.load("scaler/uae.gz")
 data = scaler.transform(df)
-print(data)
 
 TIME_STEPS = 24
 # Generated training sequences for use in the model.
@@ -51,6 +50,7 @@ for i in range(len(data_sequence)):
     max_z = np.amax(z, axis=1)
     above_threshold = max_z[max_z > 5]
     anomaly_len = len(above_threshold)
+    print(f"Sequence {i}: {above_threshold}")
     if (anomaly_len > 1):
         print(f"anomaly in sequence {i}")
 
