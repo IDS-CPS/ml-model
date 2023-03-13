@@ -36,7 +36,7 @@ data_sequence = create_sequences(data, 24)
 mean = np.load("uae_mean.npy")
 std = np.load("uae_std.npy")
 
-for i in range(2):
+for i in range(len(data_sequence)):
     print(f"Predicting index {i*24} to {i*24 + 24 - 1}")
     checked_index = np.arange(i*24, i*24 + 24, 1).tolist()
 
