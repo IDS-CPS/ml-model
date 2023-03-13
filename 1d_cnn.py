@@ -64,6 +64,12 @@ def create_sequences(values, time_steps=TIME_STEPS):
 x_train, y_train = create_sequences(train_df.values)
 x_test, y_test = create_sequences(test_df.values)
 
+mean = np.mean(x_train, axis=0)
+std = np.std(x_train, axis=0)
+
+np.save('model/cnn_mean.npy', mean)
+np.save('model/cnn_std.npy', std)
+
 model = tf.keras.models.Sequential()
 model.add(Conv1D(filters=32, kernel_size=2, activation='relu', input_shape=x_train.shape[1:]))
 model.add(MaxPooling1D(pool_size=2))
