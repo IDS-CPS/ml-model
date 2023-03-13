@@ -14,6 +14,7 @@ df.columns = [column.strip() for column in df.columns]
 
 attack_df = df.loc[df['Normal/Attack'] == 'Attack']
 attack_indexes = attack_df.index
+print(f"Attacks are on index {attack_indexes.tolist()}")
 
 features_considered = ['FIT101', 'MV101', 'P101', 'P102', 'MV201', 'P201', 'P202', 'P203', 'P204', 'P206', 'MV301', 'MV302', 'MV303', 'MV304', 'P301', 'P302', 'P401', 'P402', 'P403', 'P404', 'UV401', 'P501', 'P502', 'P601', 'P602', 'P603']
 
@@ -22,37 +23,31 @@ df = df[features_considered]
 scaler = joblib.load("scaler/uae.gz")
 data = scaler.transform(df)
 
-TIME_STEPS = 24
 # Generated training sequences for use in the model.
-def create_sequences(values, time_steps=TIME_STEPS):
+def create_sequences(values, time_steps=24):
     output = []
-    for i in range(len(values)//24):
+    for i in range(len(values)//time_steps):
         start_index = time_steps * i
         output.append(values[start_index : start_index + time_steps])
 
     return np.stack(output)
 
-data_sequence = create_sequences(data)
+data_sequence = create_sequences(data, 24)
+mean = np.load("uae_mean.npy")
+std = np.load("uae_std.npy")
 
-def z_score(data, prediction):
-    difference = np.absolute(data - prediction)
-    mean = np.mean(difference, axis=1, keepdims=True)
-    std = np.std(difference, axis=1, keepdims=True)
+for i in range(2):
+    print(f"Predicting index {i*24} to {i*24 + 24 - 1}")
+    checked_index = np.arange(i*24, i*24 + 24, 1).tolist()
 
-    z = (np.absolute(difference-mean))/std
+    mask = np.in1d(checked_index, attack_indexes)
+    if True in mask:
+        print("Checking attack")
 
-    return z
-
-for i in range(len(data_sequence)):
     prediction = model.predict(data_sequence[i].reshape((1, 24, 26)), verbose=0)
 
-    z = z_score(data_sequence[i], prediction)
-    max_z = np.amax(z, axis=1)
-    above_threshold = max_z[max_z > 5]
-    anomaly_len = len(above_threshold)
-    print(f"Sequence {i}: {above_threshold}")
-    if (anomaly_len > 1):
-        print(f"anomaly in sequence {i}")
+    difference = np.abs(data_sequence[i] - prediction).reshape(24, 26)
+    z = (np.abs(difference - mean))/std
 
-    if (anomaly_len > 3):
-        print(f"attack in sequence {i}")
+    z = np.nan_to_num(z, posinf=0, neginf=0)
+    print(np.amax(z, axis=1))
