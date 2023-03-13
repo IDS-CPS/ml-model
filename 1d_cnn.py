@@ -15,6 +15,7 @@ args = parser.parse_args()
 
 df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
 
+df = df[16000:]
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 
@@ -48,7 +49,7 @@ test_df.columns = columns
 
 joblib.dump(scaler, 'scaler/1d-cnn.gz')
 
-TIME_STEPS = 50
+TIME_STEPS = 40
 # Generated training sequences for use in the model.
 def create_sequences(values, time_steps=TIME_STEPS):
     output = []
