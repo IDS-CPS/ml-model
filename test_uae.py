@@ -1,7 +1,6 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import joblib
 
 from argparse import ArgumentParser
@@ -36,18 +35,37 @@ data_sequence = create_sequences(data, 24)
 mean = np.load("uae_mean.npy")
 std = np.load("uae_std.npy")
 
+fp = []
+fn = []
+tp = []
+anomaly_list = []
 for i in range(len(data_sequence)):
     print(f"Predicting index {i*24} to {i*24 + 24 - 1}")
     checked_index = np.arange(i*24, i*24 + 24, 1).tolist()
 
     mask = np.in1d(checked_index, attack_indexes)
-    if True in mask:
-        print("Checking attack")
-
     prediction = model.predict(data_sequence[i].reshape((1, 24, 26)), verbose=0)
 
     difference = np.abs(data_sequence[i] - prediction).reshape(24, 26)
-    z = (np.abs(difference - mean))/std
+    max_val = np.amax(difference, axis=1)
 
-    z = np.nan_to_num(z, posinf=0, neginf=0)
-    print(np.amax(z, axis=1))
+    above_t = max_val[max_val > 0.1]
+
+    if (len(above_t) > 1):
+        anomaly_list = anomaly_list + checked_index
+
+    if (len(above_t) > 9):
+        if True in mask:
+            tp = tp + checked_index
+        else:
+            fp = fp + checked_index
+    else:
+        if True in mask:
+            fn = fn + checked_index
+
+
+
+print(f"Anomaly: {len(anomaly_list)}")
+print(f"False positive: {len(fp)}")
+print(f"False negative: {len(fn)}")
+print(f"True positive: {len(tp)}")
