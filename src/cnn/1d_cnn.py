@@ -31,10 +31,11 @@ parser.add_argument("-e", "--epoch", default=1, type=int)
 args = parser.parse_args()
 
 df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
-
 df = df[16000:]
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
+
+df = df[::5]
 
 n = len(df)
 train_df = df[0:int(n*0.8)]
@@ -54,61 +55,10 @@ test_df = test_df[features_considered]
 
 scaler = MinMaxScaler()
 scaler.fit(train_df)
-columns = train_df.columns
-
-data = scaler.transform(train_df)
-train_df = pd.DataFrame(data)
-train_df.columns = columns
-
-data = scaler.transform(test_df)
-test_df = pd.DataFrame(data)
-test_df.columns = columns
-
-joblib.dump(scaler, 'scaler/1d-cnn.gz')
-
-parser = ArgumentParser()
-parser.add_argument("-e", "--epoch", default=1, type=int)
-
-args = parser.parse_args()
-
-df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
-df = df[16000:]
-df = df.drop("Normal/Attack", axis=1)
-df = df.drop("Timestamp", axis=1)
-
-n = len(df)
-train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
-
-features_considered = []
-for column in df.columns:
-  ks_result = stats.ks_2samp(train_df[column],test_df[column])
-  if (ks_result.statistic < 0.02):
-    features_considered.append(column)
-
-print("Features used: ", features_considered)
-print(len(features_considered))
-
-train_df = train_df[features_considered]
-test_df = test_df[features_considered]
-
-# Subsample every 5 seconds
-train_df = train_df.iloc[::5]
-test_df = test_df.iloc[::5]
-
-scaler = MinMaxScaler()
-scaler.fit(train_df)
-joblib.dump(scaler, "scaler/uae-v3.gz")
-columns = train_df.columns
+joblib.dump(scaler, "scaler/1d-cnn.gz")
 
 train_data = scaler.transform(train_df)
-val_data = scaler.transform(test_df)
-
-mean = np.mean(train_data, axis=0)
-std = np.std(train_data, axis=0)
-
-np.save('npy/cnn-mean-v2.npy', mean)
-np.save('npy/cnn-std-v2.npy', std)
+test_data = scaler.transform(test_df)
 
 # Generated training sequences for use in the model.
 def create_sequences(values, history_size, target_size, step):
@@ -126,15 +76,15 @@ def create_sequences(values, history_size, target_size, step):
 
 
 x_train, y_train = create_sequences(train_data, 40, 40, 1)
-x_test, y_test = create_sequences(val_data, 40, 40, 1)
+x_test, y_test = create_sequences(test_data, 40, 40, 1)
 
 print("Training input shape: ", x_train.shape)
 
 train_data = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_data = train_data.cache().shuffle(50000).batch(256).repeat()
 
-val_data = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-val_data = val_data.cache().shuffle(50000).batch(256).repeat()
+test_data = tf.data.Dataset.from_tensor_slices((x_test, y_test))
+test_data = test_data.cache().shuffle(50000).batch(256).repeat()
 
 
 model = tf.keras.models.Sequential()
@@ -157,11 +107,11 @@ model.compile(loss=tf.keras.losses.MeanSquaredError(),
                 optimizer=tf.keras.optimizers.experimental.AdamW(),
                 metrics=[tf.keras.metrics.MeanAbsoluteError()])
 
-model.fit(
+history = model.fit(
   train_data, 
   epochs=args.epoch,
   steps_per_epoch=300,
-  validation_data=val_data,
+  validation_data=test_data,
   validation_steps=50,
   callbacks=[early_stopping]
 )
