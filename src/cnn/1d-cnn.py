@@ -23,7 +23,7 @@ def plot_train_history(history, title):
   plt.title(title)
   plt.legend()
 
-  plt.savefig("plot/1d-cnn-history.png")
+  plt.savefig("plot/1d-cnn-history-2.png")
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
@@ -98,17 +98,17 @@ test_df = test_df.iloc[::5]
 
 scaler = MinMaxScaler()
 scaler.fit(train_df)
-joblib.dump(scaler, "scaler/uae-v3.gz")
+joblib.dump(scaler, "scaler/1d-cnn.gz")
 columns = train_df.columns
 
 train_data = scaler.transform(train_df)
 val_data = scaler.transform(test_df)
 
-mean = np.mean(train_data, axis=0)
-std = np.std(train_data, axis=0)
+# mean = np.mean(train_data, axis=0)
+# std = np.std(train_data, axis=0)
 
-np.save('npy/cnn-mean-v2.npy', mean)
-np.save('npy/cnn-std-v2.npy', std)
+# np.save('npy/cnn-mean.npy', mean)
+# np.save('npy/cnn-std.npy', std)
 
 # Generated training sequences for use in the model.
 def create_sequences(values, history_size, target_size, step):
@@ -157,10 +157,10 @@ model.compile(loss=tf.keras.losses.MeanSquaredError(),
                 optimizer=tf.keras.optimizers.experimental.AdamW(),
                 metrics=[tf.keras.metrics.MeanAbsoluteError()])
 
-model.fit(
+history = model.fit(
   train_data, 
   epochs=args.epoch,
-  steps_per_epoch=300,
+  steps_per_epoch=100,
   validation_data=val_data,
   validation_steps=50,
   callbacks=[early_stopping]
@@ -170,6 +170,6 @@ loss, mean_error = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
-model.save('model/1d-cnn-v3')
+model.save('model/1d-cnn-v3-2')
 
 plot_train_history(history, "Training vs Val Loss")
