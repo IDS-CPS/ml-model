@@ -157,6 +157,6 @@ loss, mae = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
-model.save('model/uae-kravchik-v4')
+model.save('model/uae-v4')
 
 plot_train_history(history, "Training vs Val Loss")
