@@ -6,66 +6,62 @@ import joblib
 from argparse import ArgumentParser
 from scipy import stats
 
-model = tf.keras.models.load_model('model/autoencoder-kravchik-v2')
+model = tf.keras.models.load_model('model/uae-kravchik')
 
-df = pd.read_csv("dataset/swat_attack.csv", delimiter=";", decimal=",")
-df.columns = [column.strip() for column in df.columns]
-
-attack_df = df.loc[df['Normal/Attack'] == 'Attack']
-attack_indexes = attack_df.index
-print(f"Attacks are on index {attack_indexes.tolist()}")
+attack_df = pd.read_csv("dataset/swat-attack.csv", delimiter=";", decimal=",")
+attack_df.columns = [column.strip() for column in attack_df.columns]
+attack_df = attack_df.set_index("Timestamp")
+attack_df = attack_df[::5]
 
 features_considered = ['FIT101', 'MV101', 'P101', 'P102', 'MV201', 'P201', 'P202', 'P203', 'P204', 'P206', 'MV301', 'MV302', 'MV303', 'MV304', 'P301', 'P302', 'P401', 'P402', 'P403', 'P404', 'UV401', 'P501', 'P502', 'P601', 'P602', 'P603']
 
-df = df[features_considered]
+scaler = joblib.load("scaler/uae-v3.gz")
+attack_data = scaler.transform(attack_df[features_considered])
 
-scaler = joblib.load("scaler/uae.gz")
-data = scaler.transform(df)
+window_size = 40
 
-# Generated training sequences for use in the model.
-def create_sequences(values, time_steps=24):
-    output = []
-    for i in range(len(values)//time_steps):
-        start_index = time_steps * i
-        output.append(values[start_index : start_index + time_steps])
+threshold = 2.5
+anomaly_counter = 0
+attack_counter = 0
+time_window_threshold = 5
 
-    return np.stack(output)
+for i in range(len(attack_df)//window_size):
+    if (i > 0):
+        old_index = start_index
+    
+    start_index = window_size * i
+    window = attack_data[start_index:start_index+window_size, :]
 
-data_sequence = create_sequences(data, 24)
-mean = np.load("uae_mean.npy")
-std = np.load("uae_std.npy")
+    if (i > 0):
+        error = np.abs(prediction - window)
+        error_mean = np.mean(error, axis=0)
+        error_std = np.std(error, axis=0)
+        z_score_all = np.abs(error - error_mean)/error_std
+        z_score_max = np.nanmax(z_score_all, axis=1)
+        
+        anomalies = np.where(z_score_max > threshold)[0]
+        attack_label = attack_df.iloc[old_index:old_index+window_size]['Normal/Attack'].values
+        print(attack_label)
+        print(z_score_max)
 
-fp = []
-fn = []
-tp = []
-anomaly_list = []
-for i in range(len(data_sequence)):
-    print(f"Predicting index {i*24} to {i*24 + 24 - 1}")
-    checked_index = np.arange(i*24, i*24 + 24, 1).tolist()
+        if len(anomalies) > 0:
+            anomaly_counter += 1
+            consecutive_counter = 0
+            expected_index = anomalies[0] + 1
+            for j in range(1, len(anomalies)):
+                if anomalies[j] == expected_index:
+                    consecutive_counter += 1
+                    expected_index += 1
+                else:
+                    consecutive_counter = 0
+                    expected_index = anomalies[j] + 1
 
-    mask = np.in1d(checked_index, attack_indexes)
-    prediction = model.predict(data_sequence[i].reshape((1, 24, 26)), verbose=0)
+                if consecutive_counter > time_window_threshold:
+                    attack_counter += 1
+                    print("Attack detected in window {} - {} with anomalies in {}".format(attack_df.index[old_index], attack_df.index[old_index+window_size], anomalies))
+                    break
 
-    difference = np.abs(data_sequence[i] - prediction).reshape(24, 26)
-    max_val = np.amax(difference, axis=1)
+    prediction = model.predict(window.reshape((1, window.shape[0], window.shape[1]))).reshape((window.shape[0], window.shape[1]))
 
-    above_t = max_val[max_val > 0.1]
-
-    if (len(above_t) > 1):
-        anomaly_list = anomaly_list + checked_index
-
-    if (len(above_t) > 9):
-        if True in mask:
-            tp = tp + checked_index
-        else:
-            fp = fp + checked_index
-    else:
-        if True in mask:
-            fn = fn + checked_index
-
-
-
-print(f"Anomaly: {len(anomaly_list)}")
-print(f"False positive: {len(fp)}")
-print(f"False negative: {len(fn)}")
-print(f"True positive: {len(tp)}")
+print("Attack counter: {}".format(attack_counter))
+print("Anomaly counter: {}".format(anomaly_counter))
