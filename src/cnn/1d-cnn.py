@@ -23,7 +23,7 @@ def plot_train_history(history, title):
   plt.title(title)
   plt.legend()
 
-  plt.savefig("plot/1d-cnn-history-2.png")
+  plt.savefig("plot/1d-cnn-history.png")
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
@@ -37,21 +37,18 @@ df = df.drop("Timestamp", axis=1)
 
 df = df[::5]
 
+features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
+"AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
+"PIT501", "PIT502", "PIT503"]
+
+df = df.drop(columns=features_dropped)
+
 n = len(df)
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
 
-features_considered = []
-for column in df.columns:
-  ks_result = stats.ks_2samp(train_df[column],test_df[column])
-  if (ks_result.statistic < 0.02):
-    features_considered.append(column)
-
-print("Features used: ", features_considered)
-print(len(features_considered))
-
-train_df = train_df[features_considered]
-test_df = test_df[features_considered]
+print("Features used: ", df.columns)
+print(len(df.columns))
 
 scaler = MinMaxScaler()
 scaler.fit(train_df)
@@ -120,6 +117,6 @@ loss, mean_error = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
-model.save('model/1d-cnn-v3-2')
+model.save('model/1d-cnn')
 
 plot_train_history(history, "Training vs Val Loss")

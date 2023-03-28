@@ -38,21 +38,18 @@ df = df.drop("Timestamp", axis=1)
 # Subsample every 5 seconds
 df = df[::5]
 
+features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
+"AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
+"PIT501", "PIT502", "PIT503"]
+
+df = df.drop(columns=features_dropped)
+
 n = len(df)
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
 
-features_considered = []
-for column in df.columns:
-  ks_result = stats.ks_2samp(train_df[column],test_df[column])
-  if (ks_result.statistic < 0.02):
-    features_considered.append(column)
-
-print("Features used: ", features_considered)
-print(len(features_considered))
-
-train_df = train_df[features_considered]
-test_df = test_df[features_considered]
+print("Features used: ", df.columns)
+print(len(df.columns))
 
 scaler = MinMaxScaler()
 scaler.fit(train_df)
@@ -76,8 +73,8 @@ def create_sequences(values, history_size, target_size, step):
     return np.array(data), np.array(target)
 
 
-x_train, y_train = create_sequences(train_data, 40, 40, 1)
-x_test, y_test = create_sequences(test_data, 40, 40, 1)
+x_train, y_train = create_sequences(train_data, 20, 20, 1)
+x_test, y_test = create_sequences(test_data, 20, 20, 1)
 
 print("Training input shape: ", x_train.shape)
 
