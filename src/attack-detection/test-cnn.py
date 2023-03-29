@@ -19,9 +19,9 @@ attack_df = attack_df.drop(columns=features_dropped)
 scaler = joblib.load("scaler/1d-cnn.gz")
 attack_data = scaler.transform(attack_df.drop("Normal/Attack", axis=1))
 
-window_size = 20
+window_size = 40
 
-threshold = 5
+threshold = 4
 anomaly_counter = 0
 attack_counter = 0
 time_window_threshold = 6
