@@ -54,6 +54,7 @@ normal_dict = dict()
 attack_number = 0
 anomaly_counter = 0
 normal_number = 1
+consecutive_counter = 0
 
 normal_dict[normal_number] = {
     "start_period": attack_df.index[window_size],
@@ -167,7 +168,7 @@ for i in range(1, normal_number+1):
 
         for false_alarm in false_alarms:
             print("Window: {} - {}".format(false_alarm["window_start"].strip(), false_alarm["window_end"].strip()))
-            print("Time Detected: {} - {}".format(attack["start"].strip(), attack["end"].strip()))
+            print("Time Detected: {} - {}".format(false_alarm["start"].strip(), false_alarm["end"].strip()))
     print() 
     print()
 
