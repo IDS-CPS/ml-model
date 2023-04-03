@@ -1,22 +1,38 @@
-from datetime import datetime
 import pandas as pd
 import numpy as np
 import tensorflow as tf
 import joblib
+
+from datetime import datetime
+from argparse import ArgumentParser
+
+parser = ArgumentParser()
+parser.add_argument("-w", "--window", default=10, type=int)
+parser.add_argument("-t", "--target", default=10, type=int)
+parser.add_argument("-th", "--threshold", default=6, type=int)
+parser.add_argument("-tth", "--timethreshold", default=6, type=int)
+parser.add_argument("-m", "--model")
+parser.add_argument("-s", "--scaler")
+parser.add_argument("-mn", "--mean")
+parser.add_argument("-std", "--standard")
+
+args = parser.parse_args()
+window_size = args.window
+target_size = args.target
+threshold = args.threshold
+time_window_threshold = args.timethreshold
 
 def count_time(start, end):
     start_datetime = datetime.strptime(start, "%d/%m/%Y %I:%M:%S %p")
     end_datetime = datetime.strptime(end, "%d/%m/%Y %I:%M:%S %p")
     return end_datetime - start_datetime
 
-model = tf.keras.models.load_model('model/v2/uae')
-
 attack_df = pd.read_csv("dataset/swat-attack.csv", delimiter=";", decimal=",")
 attack_df.columns = [column.strip() for column in attack_df.columns]
 attack_df = attack_df.set_index("Timestamp")
 attack_df = attack_df[::5]
 
-attack_df = attack_df[:1000]
+# attack_df = attack_df[:1000]
 
 features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
 "AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
@@ -24,18 +40,11 @@ features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
 
 attack_df = attack_df.drop(columns=features_dropped)
 
-scaler = joblib.load("scaler/v2/uae.gz")
+scaler = joblib.load(args.scaler)
 attack_data = scaler.transform(attack_df.drop("Normal/Attack", axis=1))
 
-window_size = 10
-target_size = 10
-
-threshold = 6
-anomaly_counter = 0
-time_window_threshold = 6
-
-mean = np.load("npy/uae/mean.npy")
-std = np.load("npy/uae/std.npy")
+mean = np.load(args.mean)
+std = np.load(args.standard)
 is_attack_period = False
 start_period = ""
 end_period = ""
@@ -43,12 +52,15 @@ end_period = ""
 attack_dict = dict()
 normal_dict = dict()
 attack_number = 0
+anomaly_counter = 0
 normal_number = 1
 
 normal_dict[normal_number] = {
     "start_period": attack_df.index[window_size],
     "false_alarms": []
 }
+
+model = tf.keras.models.load_model(args.model)
 
 for i in range (len(attack_data)//window_size-1):
     start_index = window_size * i
@@ -97,14 +109,16 @@ for i in range (len(attack_data)//window_size-1):
                 attack_dict[attack_number]["attacks"].append({
                     "window_start": attack_df.index[end_index],
                     "window_end": attack_df.index[end_index+target_size-1],
-                    "time_detected": attack_df.index[end_index+j],
+                    "start": attack_df.index[end_index+j-time_window_threshold],
+                    "end": attack_df.index[end_index+j],
                     "z_scores": z_score_max
                 })
             else:
                 normal_dict[normal_number]["false_alarms"].append({
                     "window_start": attack_df.index[end_index],
                     "window_end": attack_df.index[end_index+target_size-1],
-                    "time_detected": attack_df.index[end_index+j],
+                    "start": attack_df.index[end_index+j-time_window_threshold],
+                    "end": attack_df.index[end_index+j],
                     "z_scores": z_score_max
                 })
 
@@ -115,23 +129,28 @@ if not is_attack_period:
     normal_dict[normal_number]["end_period"] = attack_df.index[len(attack_data)-1]
 
 attacks_detected = 0
+total_attack_duration = 0
 true_positive_count = 0
 for i in range(1, attack_number+1):
     print("Attack {}".format(i))
-    print("Attack Period : {}-{}".format(attack_dict[i]["start_period"], attack_dict[i]["end_period"]))
+    print("Attack Period : {} - {}".format(attack_dict[i]["start_period"], attack_dict[i]["end_period"]))
+
+    attack_duration = count_time(attack_dict[i]["start_period"].strip(), attack_dict[i]["end_period"].strip())
+    total_attack_duration += attack_duration.seconds
+    print("Attack Duration: {}".format(attack_duration))
     if len(attack_dict[i]["attacks"]) > 0:
         attacks = attack_dict[i]["attacks"]
         attacks_detected += 1
-        print("Detection speed: {}".format(count_time(attack_dict[i]["start_period"].strip(), attacks[0]["time_detected"].strip())))
+        print("Detection speed: {}".format(count_time(attack_dict[i]["start_period"].strip(), attacks[0]["end"].strip())))
         print("Time period of attack that is detected: {} - {} ({})".format(
-            attacks[0]["window_start"].strip(), 
-            attacks[len(attacks)-1]["window_end"].strip(),
-            count_time(attacks[0]["window_start"].strip(), attacks[len(attacks)-1]["window_end"].strip())
+            attacks[0]["start"].strip(), 
+            attacks[len(attacks)-1]["end"].strip(),
+            count_time(attacks[0]["start"].strip(), attacks[len(attacks)-1]["end"].strip())
         ))
         true_positive_count += len(attacks)
+
         for attack in attacks:
-            print("Window: {} - {}".format(attack["window_start"].strip(), attack["window_end"].strip()))
-            print("Time Detected: {}".format(attack["time_detected"]))
+            print("Time Detected: {} - {}".format(attack["start"].strip(), attack["end"].strip()))
             print("Z Scores: {}".format(attack["z_scores"]))
     print()
     print()
@@ -145,17 +164,26 @@ for i in range(1, normal_number+1):
     if len(normal_dict[i]["false_alarms"]) > 0:
         false_alarms = normal_dict[i]["false_alarms"]
         false_alarm_count += len(false_alarms)
-        
+
         for false_alarm in false_alarms:
             print("Window: {} - {}".format(false_alarm["window_start"].strip(), false_alarm["window_end"].strip()))
-            print("Time Detected: {}".format(false_alarm["time_detected"]))
-            # print("Z Scores: {}".format(false_alarm["z_scores"]))
-    print()
+            print("Time Detected: {} - {}".format(attack["start"].strip(), attack["end"].strip()))
+    print() 
     print()
 
-print("True Positive Count: {}".format(true_positive_count))
-print("False Alarm Count: {}".format(false_alarm_count))
+total_normal = len(attack_df[attack_df['Normal/Attack'] == 'Normal']) * 5
+true_positive = true_positive_count*5*time_window_threshold
+false_positive = false_alarm_count*5*time_window_threshold
+false_negative = total_attack_duration - true_positive_count*5*time_window_threshold
+precision = true_positive/(true_positive + false_positive)
+recall = true_positive/(total_attack_duration)
+fpr = false_positive/total_normal
 
-# Notes for tomorrow:
-# - Hitung percentage yang kedetect: detik positive yg kedetect/ total waktu yg positive
-# - Hitung false alarm: detik false alarm/total waktu keseluruhan data
+print(total_attack_duration)
+print("True Positive Seconds: {}".format(true_positive))
+print("False Positive Seconds: {}".format(false_positive))
+print("False Negative Seconds: {}".format(false_negative))
+print("Precision: {}".format(precision))
+print("Recall: {}".format(recall))
+print("F1 Score: {}".format(2 * (precision * recall)/(precision + recall)))
+print("False Positive Rate: {}".format(fpr))
