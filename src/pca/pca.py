@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 import joblib
 
+from itertools import product
 from datetime import datetime
 from argparse import ArgumentParser
 from scipy import stats
