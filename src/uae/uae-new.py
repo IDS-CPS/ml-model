@@ -162,11 +162,11 @@ print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 model.save('model/v2/uae')
 
 error_arr = []
-for i in range (len(val_data)//history_size-1):
+for i in range (len(train_data)//history_size-1):
     start_index = history_size * i
     end_index = start_index + history_size
-    input_window = val_data[start_index:start_index+history_size]
-    target_window = val_data[end_index:end_index+target_size]
+    input_window = train_data[start_index:start_index+history_size]
+    target_window = train_data[end_index:end_index+target_size]
 
     prediction = model.predict(input_window.reshape(1, history_size, -1)).reshape((target_window.shape[0], target_window.shape[1]))
     error = np.abs(prediction - target_window)
@@ -179,7 +179,7 @@ error_arr = error_arr.reshape((-1, error_arr.shape[-1]))
 error_mean = np.mean(error_arr, axis=0)
 error_std = np.std(error_arr, axis=0)
 
-np.save("npy/uae/mean.py", error_mean)
-np.save("npy/uae/std.py", error_mean)
+np.save("npy/uae/mean", error_mean)
+np.save("npy/uae/std", error_mean)
 
-plot_train_history(history, "Training vs Val Loss", "plot/v2/uae.png")
+plot_train_history(history, "Training vs Val Loss", "plot/uae.png")
