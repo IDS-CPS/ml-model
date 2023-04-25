@@ -70,12 +70,6 @@ df = df[::5]
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 
-
-# features_considered = []
-# for column in df.columns:
-#   ks_result = stats.ks_2samp(train_df[column],test_df[column])
-#   if (ks_result.statistic < 0.02):
-#     features_considered.append(column)
 features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
 "AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
 "PIT501", "PIT502", "PIT503"]
