@@ -7,7 +7,7 @@ import util
 from argparse import ArgumentParser
 from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dropout, Dense, Reshape
+from tensorflow.keras.layers import LSTM, Dense
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
@@ -47,7 +47,7 @@ history_size = args.history
 x_train, y_train = util.create_sequences(train_data, history_size)
 x_test, y_test = util.create_sequences(test_data, history_size)
 
-print("Training input shape: ", x_train.shape, y_train.shape)
+print("Training input shape: ", x_train.shape)
 
 train_tensor = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
@@ -55,18 +55,14 @@ train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
 val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
 
-model = tf.keras.models.Sequential()
-model.add(Conv1D(filters=32, kernel_size=2, activation='relu', input_shape=x_train.shape[1:]))
-model.add(MaxPooling1D(pool_size=2, strides=1))
-model.add(Conv1D(filters=64, kernel_size=2, activation='relu'))
-model.add(MaxPooling1D(pool_size=2, strides=1))
-model.add(Conv1D(filters=128, kernel_size=2, activation='relu'))
-model.add(MaxPooling1D(pool_size=2, strides=1))
-model.add(Conv1D(filters=256, kernel_size=2, activation='relu'))
-model.add(MaxPooling1D(pool_size=2, strides=1))
-model.add(Flatten())
-model.add(Dropout(rate=0.5))
-model.add(Dense(units=x_train.shape[2]))
+model = tf.keras.models.Sequential([ 
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(1024, return_sequences=True, input_shape=x_train.shape[1:])),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(512, return_sequences=True)),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256, return_sequences=True)),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
+    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
+    tf.keras.layers.Dense(x_train.shape[2]),
+]) 
 
 early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=20, mode='min', verbose=1)
 
@@ -77,9 +73,9 @@ model.compile(loss=tf.keras.losses.MeanSquaredError(),
 history = model.fit(
   train_tensor, 
   epochs=args.epoch,
-  steps_per_epoch=300,
+  steps_per_epoch=100,
   validation_data=val_tensor,
-  validation_steps=100,
+  validation_steps=50,
   callbacks=[early_stopping]
 )
 
@@ -89,9 +85,9 @@ print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
-np.save("npy/cnn/mean", error_mean)
-np.save("npy/cnn/std", error_mean)
-model.save('model/cnn')
-joblib.dump(scaler, "scaler/cnn.gz")
+np.save("npy/lstm/mean", error_mean)
+np.save("npy/lstm/std", error_mean)
+model.save('model/lstm')
+joblib.dump(scaler, "scaler/lstm.gz")
 
-util.plot_train_history(history, "Training vs Val Loss", "plot/cnn.png")
+util.plot_train_history(history, "Training vs Val Loss", "plot/lstm.png")
