@@ -2,29 +2,13 @@ import pandas as pd
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import matplotlib.pyplot as plt
 import joblib
+import util
 
 from argparse import ArgumentParser
 from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras import layers
-
-## Plot the training history
-def plot_train_history(history, title, filename):
-  loss = history.history['loss']
-  val_loss = history.history['val_loss']
-
-  epochs = range(len(loss))
-
-  plt.figure()
-
-  plt.plot(epochs, loss, 'b', label='Training loss')
-  plt.plot(epochs, val_loss, 'r', label='Validation loss')
-  plt.title(title)
-  plt.legend()
-
-  plt.savefig(filename)
 
 class Encoder(layers.Layer):
   def __init__(self, intermediate_dim=32):
@@ -75,10 +59,12 @@ class Autoencoder(tf.keras.Model):
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
+parser.add_argument("-d", "--dataset", default="dataset/swat-minimized.csv", type=str)
+parser.add_argument("-ht", "--history", default=10, type=int)
 
 args = parser.parse_args()
 
-df = pd.read_csv("dataset/swat-2015-data.csv", delimiter=";", decimal=",")
+df = pd.read_csv(args.dataset, delimiter=";", decimal=",")
 df = df[16000:]
 df = df[::5]
 df = df.drop("Normal/Attack", axis=1)
@@ -110,22 +96,10 @@ columns = train_df.columns
 train_data = scaler.transform(train_df)
 val_data = scaler.transform(test_df)
 
-def create_sequences(values, history_size):
-    data = []
-    target = []
+history_size = args.history
 
-    for i in range(len(values)-history_size):
-        end_index = i + history_size
-        data.append(values[i:end_index])
-        target.append(values[end_index])
-    
-    return np.array(data), np.array(target)
-
-
-history_size = 10
-
-x_train, y_train = create_sequences(train_data, history_size)
-x_test, y_test = create_sequences(val_data, history_size)
+x_train, y_train = util.create_sequences(train_data, history_size)
+x_test, y_test = util.create_sequences(val_data, history_size)
 
 print("Training input shape: ", x_train.shape, y_train.shape)
 
@@ -156,23 +130,7 @@ loss, mae = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
-
-error_arr = []
-for i in range (len(train_data)-history_size):
-    end_index = i + history_size
-    input_window = train_data[i:end_index]
-    target_window = train_data[end_index]
-
-    prediction = model.predict(np.expand_dims(input_window, axis=0)).squeeze()
-    error = np.abs(prediction - target_window)
-
-    error_arr.append(error)
-
-error_arr = np.asarray(error_arr)
-error_arr = error_arr.reshape((-1, error_arr.shape[-1]))
-
-error_mean = np.mean(error_arr, axis=0)
-error_std = np.std(error_arr, axis=0)
+error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
 joblib.dump(scaler, "scaler/uae.gz")
 np.save("npy/uae/mean", error_mean)
