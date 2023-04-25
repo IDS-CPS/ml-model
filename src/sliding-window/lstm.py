@@ -5,9 +5,8 @@ import joblib
 import util
 
 from argparse import ArgumentParser
-from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.layers import LSTM, Dense
+from tensorflow.keras.layers import LSTM, Dense, Bidirectional
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
@@ -56,12 +55,12 @@ val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
 
 model = tf.keras.models.Sequential([ 
-    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(1024, return_sequences=True, input_shape=x_train.shape[1:])),
-    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(512, return_sequences=True)),
-    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(256, return_sequences=True)),
-    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(128, return_sequences=True)),
-    tf.keras.layers.Bidirectional(tf.keras.layers.LSTM(64)),
-    tf.keras.layers.Dense(x_train.shape[2]),
+    Bidirectional(LSTM(1024, return_sequences=True, input_shape=x_train.shape[1:])),
+    Bidirectional(LSTM(512, return_sequences=True)),
+    Bidirectional(LSTM(256, return_sequences=True)),
+    Bidirectional(LSTM(128, return_sequences=True)),
+    Bidirectional(LSTM(64)),
+    Dense(x_train.shape[2]),
 ]) 
 
 early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=20, mode='min', verbose=1)
