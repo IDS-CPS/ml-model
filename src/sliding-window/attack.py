@@ -3,7 +3,6 @@ import numpy as np
 import tensorflow as tf
 import joblib
 
-from datetime import datetime
 from argparse import ArgumentParser
 from sklearn.metrics import f1_score, precision_score, recall_score
 
@@ -22,13 +21,13 @@ model_src = f"model/{args.model}-{history_size}"
 mean_npy = f"npy/{args.model}/mean-{history_size}.npy"
 std_npy = f"npy/{args.model}/std-{history_size}.npy"
 
+print(args)
+
 attack_df = pd.read_csv("dataset/swat-attack.csv", delimiter=";", decimal=",")
 attack_df.columns = [column.strip() for column in attack_df.columns]
 attack_df["Normal/Attack"] = attack_df["Normal/Attack"].replace(["A ttack"], "Attack")
 attack_df = attack_df.set_index("Timestamp")
 attack_df = attack_df[::5]
-
-attack_df = attack_df[:1000]
 
 features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
 "AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
@@ -68,19 +67,20 @@ for i in range (len(attack_data)-history_size):
     if (is_attack_period and attack_label == 'Normal'):
         is_attack_period = False
 
+
+    print(attack_label, z_score_max)
     if z_score_max > threshold:
         consecutive_counter += 1
-
     else:
-        if consecutive_counter > time_threshold:
-            start_attack = attack_df.index[end_index-consecutive_counter]
-            end_attack = attack_df.index[end_index-1]
-            attack_df.loc[start_attack:end_attack, "Prediction"] = "Attack"
-
-            if attack_label == 'Attack':
-                attack_detected.add(attack_number)
-
         consecutive_counter = 0
+
+    if consecutive_counter > time_threshold:
+        start_attack = attack_df.index[end_index-consecutive_counter]
+        end_attack = attack_df.index[end_index]
+        attack_df.loc[start_attack:end_attack, "Prediction"] = "Attack"
+
+        if attack_label == 'Attack':
+            attack_detected.add(attack_number)
 
 if consecutive_counter > time_threshold:
     start_attack = attack_df.index[len(attack_data)-consecutive_counter-1]
@@ -106,3 +106,5 @@ print(attack_detected)
 print("Precision:", precision_score(real_value, predicted_value))
 print("Recall:", recall_score(real_value, predicted_value))
 print("F1 Score:", f1_score(real_value, predicted_value))
+
+attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/{model}-{history_size}.csv")

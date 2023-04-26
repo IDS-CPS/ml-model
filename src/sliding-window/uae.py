@@ -64,6 +64,8 @@ parser.add_argument("-ht", "--history", default=10, type=int)
 
 args = parser.parse_args()
 
+print("History size:", args.history)
+
 df = pd.read_csv(args.dataset, delimiter=";", decimal=",")
 df = df[16000:]
 df = df[::5]
@@ -126,9 +128,9 @@ print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
-joblib.dump(scaler, "scaler/uae.gz")
-np.save("npy/uae/mean", error_mean)
-np.save("npy/uae/std", error_mean)
-model.save('model/uae')
+joblib.dump(scaler, f"scaler/uae-{history_size}.gz")
+np.save(f"npy/uae/mean-{history_size}", error_mean)
+np.save(f"npy/uae/std-{history_size}", error_mean)
+model.save(f'model/uae-{history_size}')
 
-plot_train_history(history, "Training vs Val Loss", "plot/uae.png")
+plot_train_history(history, "Training vs Val Loss", f"plot/uae-{history_size}.png")
