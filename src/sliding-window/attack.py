@@ -107,4 +107,4 @@ print("Precision:", precision_score(real_value, predicted_value))
 print("Recall:", recall_score(real_value, predicted_value))
 print("F1 Score:", f1_score(real_value, predicted_value))
 
-attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/{model}-{history_size}.csv")
+attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/{args.model}-{history_size}.csv")

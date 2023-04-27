@@ -16,7 +16,7 @@ parser.add_argument("-ht", "--history", default=10, type=int)
 args = parser.parse_args()
 
 df = pd.read_csv(args.dataset, delimiter=";", decimal=",")
-df = df[16000:]
+# df = df[16000:]
 df = df[::5]
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
@@ -82,11 +82,12 @@ loss, mean_error = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
+model.save(f'model/lstm-{history_size}')
+joblib.dump(scaler, f"scaler/lstm-{history_size}.gz")
+
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
-np.save("npy/lstm/mean", error_mean)
-np.save("npy/lstm/std", error_mean)
-model.save('model/lstm')
-joblib.dump(scaler, "scaler/lstm.gz")
+np.save(f"npy/lstm/mean-{history_size}", error_mean)
+np.save(f"npy/lstm/std-{history_size}", error_mean)
 
-util.plot_train_history(history, "Training vs Val Loss", "plot/lstm.png")
+util.plot_train_history(history, "Training vs Val Loss", f"plot/lstm-{history_size}.png")
