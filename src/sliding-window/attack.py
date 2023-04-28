@@ -4,7 +4,7 @@ import tensorflow as tf
 import joblib
 
 from argparse import ArgumentParser
-from sklearn.metrics import f1_score, precision_score, recall_score
+from sklearn.metrics import f1_score, precision_score, recall_score, auc, roc_curve
 
 parser = ArgumentParser()
 parser.add_argument("-t", "--threshold", default=7, type=int)
@@ -68,7 +68,7 @@ for i in range (len(attack_data)-history_size):
         is_attack_period = False
 
 
-    print(attack_label, z_score_max)
+    # print(attack_label, z_score_max)
     if z_score_max > threshold:
         consecutive_counter += 1
     else:
@@ -106,5 +106,8 @@ print(attack_detected)
 print("Precision:", precision_score(real_value, predicted_value))
 print("Recall:", recall_score(real_value, predicted_value))
 print("F1 Score:", f1_score(real_value, predicted_value))
+fpr, tpr, thresholds = roc_curve(real_value, predicted_value)
+print("AUC:", auc(fpr, tpr))
 
-attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/{args.model}-{history_size}.csv")
+
+attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/{args.model}-{history_size}-{threshold}-{time_threshold}.csv")
