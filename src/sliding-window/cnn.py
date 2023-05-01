@@ -90,7 +90,7 @@ print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
 np.save("npy/cnn/mean", error_mean)
-np.save("npy/cnn/std", error_mean)
+np.save("npy/cnn/std", error_std)
 model.save('model/cnn')
 joblib.dump(scaler, "scaler/cnn.gz")
 

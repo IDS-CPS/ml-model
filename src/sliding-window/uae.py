@@ -130,7 +130,7 @@ error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
 joblib.dump(scaler, f"scaler/uae-{history_size}.gz")
 np.save(f"npy/uae/mean-{history_size}", error_mean)
-np.save(f"npy/uae/std-{history_size}", error_mean)
+np.save(f"npy/uae/std-{history_size}", error_std)
 model.save(f'model/uae-{history_size}')
 
-plot_train_history(history, "Training vs Val Loss", f"plot/uae-{history_size}.png")
+util.plot_train_history(history, "Training vs Val Loss", f"plot/uae-{history_size}.png")

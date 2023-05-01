@@ -2,16 +2,12 @@ import pandas as pd
 import numpy as np
 import joblib
 
-from itertools import product
-from datetime import datetime
 from argparse import ArgumentParser
-from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.decomposition import PCA
 from sklearn.metrics import f1_score, precision_score, recall_score, auc, roc_curve
 
 parser = ArgumentParser()
-parser.add_argument("-e", "--epoch", default=1, type=int)
 parser.add_argument("-d", "--dataset", default="dataset/swat-2015-data.csv", type=str)
 parser.add_argument("-w", "--window", default=10, type=int)
 parser.add_argument("-t", "--threshold", default=7, type=int)
@@ -42,7 +38,6 @@ print(len(df.columns))
 
 scaler = MinMaxScaler()
 scaler = scaler.fit(df)
-joblib.dump(scaler, "scaler/pca.gz")
 
 train_data = scaler.transform(train_df)
 test_data = scaler.transform(test_df)
@@ -60,6 +55,7 @@ e_std = np.std(error, axis=0)
 # Setup attack data
 attack_df = pd.read_csv("dataset/swat-attack.csv", delimiter=";", decimal=",")
 attack_df.columns = [column.strip() for column in attack_df.columns]
+attack_df["Normal/Attack"] = attack_df["Normal/Attack"].replace(["A ttack"], "Attack")
 attack_df = attack_df.set_index("Timestamp")
 attack_df = attack_df[::5]
 # attack_df = attack_df[:1000]
@@ -106,8 +102,8 @@ for i in range(len(attack_df)-window_size):
     else:
         if consecutive_counter > time_threshold:
             start_attack = attack_df.index[end_index-consecutive_counter]
-            end_attack = attack_df.index[end_index-1]
-            attack_df.loc[start_attack:end_attack+1, "Prediction"] = "Attack"
+            end_attack = attack_df.index[end_index]
+            attack_df.loc[start_attack:end_attack, "Prediction"] = "Attack"
 
             if attack_label == 'Attack':
                 attack_detected.add(attack_number)
@@ -120,7 +116,7 @@ if consecutive_counter > time_threshold:
     attack_df.loc[start_attack:end_attack, "Prediction"] = "Attack"
 
 
-attack_df = attack_df[history_size+1:]
+attack_df = attack_df[window_size:]
 real_value = attack_df["Normal/Attack"].to_numpy()
 real_value[real_value == "Normal"] = 0
 real_value[(real_value == "Attack")] = 1
@@ -140,3 +136,10 @@ print("Recall:", recall_score(real_value, predicted_value))
 print("F1 Score:", f1_score(real_value, predicted_value))
 fpr, tpr, thresholds = roc_curve(real_value, predicted_value)
 print("AUC:", auc(fpr, tpr))
+
+joblib.dump(scaler, f"scaler/pca-{window_size}.gz")
+np.save(f"npy/pca/mean-{window_size}", e_mean)
+np.save(f"npy/pca/std-{window_size}", e_std)
+joblib.dump(pca, f"model/pca-{window_size}")
+
+attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/pca-{window_size}-{threshold}-{time_threshold}.csv")

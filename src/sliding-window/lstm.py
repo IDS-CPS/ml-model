@@ -88,6 +88,6 @@ joblib.dump(scaler, f"scaler/lstm-{history_size}.gz")
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
 np.save(f"npy/lstm/mean-{history_size}", error_mean)
-np.save(f"npy/lstm/std-{history_size}", error_mean)
+np.save(f"npy/lstm/std-{history_size}", error_std)
 
 util.plot_train_history(history, "Training vs Val Loss", f"plot/lstm-{history_size}.png")

@@ -68,7 +68,7 @@ for i in range (len(attack_data)-history_size):
         is_attack_period = False
 
 
-    # print(attack_label, z_score_max)
+    print(attack_label, z_score_max)
     if z_score_max > threshold:
         consecutive_counter += 1
     else:
