@@ -62,7 +62,7 @@ attack_df = pd.read_csv("dataset/swat-attack.csv", delimiter=";", decimal=",")
 attack_df.columns = [column.strip() for column in attack_df.columns]
 attack_df = attack_df.set_index("Timestamp")
 attack_df = attack_df[::5]
-attack_df = attack_df[:1000]
+# attack_df = attack_df[:1000]
 
 attack_df = attack_df.drop(columns=features_dropped)
 attack_data = scaler.transform(attack_df.drop("Normal/Attack", axis=1))
