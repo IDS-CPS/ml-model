@@ -32,11 +32,17 @@ def load_model(url, r):
         # Load the keras model from the temporary directory
         return tf.keras.models.load_model(f"{td}/tmp-model")
 
-url = client.presigned_get_object("ids", "model/uae.zip")
-# url = client.presigned_get_object("ids", "npy/test.gz")
-r = requests.get(url)
+url = client.presigned_get_object("ids", "pompa-v2.csv")
+print(url)
+# url = client.presigned_get_object("ids", "npy/mean.gz")
+# print(url)
+# url = client.presigned_get_object("ids", "npy/std.gz")
+# print(url)
+# url = client.presigned_get_object("ids", "scaler/uae.gz")
+# print(url)
+# r = requests.get(url)
 
-model = load_model(url, r)
-print(model.summary())
+# model = load_model(url, r)
+# print(model.summary())
 # test = joblib.load("test.npy")
 # print(test)
