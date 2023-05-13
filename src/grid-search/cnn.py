@@ -76,9 +76,9 @@ def create_model(n_filter=32, dropout_rate=0.5, kernel_size=2, pool_size=2):
 
 
 n_filters = [16, 32, 64]
-dropout_rate = [0.1, 0.3, 0.5]
-kernel_size = [2, 3, 4]
-pool_size = [2, 3, 4]
+dropout_rate = [0.1]
+kernel_size = [2]
+pool_size = [2]
 
 params = list(product(n_filters, dropout_rate, kernel_size, pool_size))
 
