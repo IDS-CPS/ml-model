@@ -16,11 +16,13 @@ args = parser.parse_args()
 history_size = args.history
 threshold = args.threshold
 time_threshold = args.timethreshold
+
 scaler_src = f"scaler/{args.model}-{history_size}.gz"
 model_src = f"model/{args.model}-{history_size}"
 mean_npy = f"npy/{args.model}/mean-{history_size}.npy"
 std_npy = f"npy/{args.model}/std-{history_size}.npy"
 
+print(history_size, threshold, time_threshold, args.model)
 print(args)
 
 attack_df = pd.read_csv("dataset/swat-attack.csv", delimiter=";", decimal=",")
@@ -67,8 +69,6 @@ for i in range (len(attack_data)-history_size):
     if (is_attack_period and attack_label == 'Normal'):
         is_attack_period = False
 
-
-    print(attack_label, z_score_max)
     if z_score_max > threshold:
         consecutive_counter += 1
     else:
