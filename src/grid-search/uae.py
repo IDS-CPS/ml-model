@@ -66,12 +66,12 @@ args = parser.parse_args()
 print("History size:", args.history)
 
 df = pd.read_csv(args.dataset)
-df = df.drop("timestamp", axis=1)
+df = df[16000:]
+df = df.drop("Normal/Attack", axis=1)
+df = df.drop("Timestamp", axis=1)
+df = df[::5]
 
 n = len(df)
-train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
-
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
 

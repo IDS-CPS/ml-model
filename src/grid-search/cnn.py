@@ -18,7 +18,10 @@ parser.add_argument("-ht", "--history", default=10, type=int)
 args = parser.parse_args()
 
 df = pd.read_csv(args.dataset)
-df = df.drop("timestamp", axis=1)
+df = df[16000:]
+df = df.drop("Normal/Attack", axis=1)
+df = df.drop("Timestamp", axis=1)
+df = df[::5]
 
 n = len(df)
 train_df = df[0:int(n*0.8)]
