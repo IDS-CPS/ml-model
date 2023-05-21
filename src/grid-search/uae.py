@@ -68,7 +68,6 @@ print("History size:", args.history)
 df = pd.read_csv(args.dataset)
 df = df[16000:]
 df.columns = [column.strip() for column in df.columns]
-df = df.drop('Unnamed: 0', axis=1)
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 df = df[::5]
