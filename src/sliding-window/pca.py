@@ -42,8 +42,9 @@ scaler = scaler.fit(df)
 train_data = scaler.transform(train_df)
 test_data = scaler.transform(test_df)
 
+print(len(df.columns)//2)
 # Fit PCA to training data
-pca = PCA(n_components=13)
+pca = PCA(n_components=len(df.columns)//2)
 pca.fit(train_data)
 train_pca = pca.transform(test_data)
 train_recon = pca.inverse_transform(train_pca)
@@ -74,20 +75,19 @@ attack_detected = set()
 consecutive_counter = 0
 attack_df["Prediction"] = "Normal"
 
-for i in range(len(attack_df)-window_size):
-    end_index = i + window_size
-    window = attack_data[i:end_index]
+print(np.inf > threshold)
+np.seterr(all="ignore")
+for i in range(len(attack_df)):
+    window = attack_data[i]
 
-    window_pca = pca.transform(window)
+    window_pca = pca.transform(np.expand_dims(window, axis=0))
     window_recon = pca.inverse_transform(window_pca)
     error = np.abs(window - window_recon)
-
-    z_score_all = np.abs(error[-1] - e_mean)/e_std
+    
+    z_score_all = np.abs(error[0] - e_mean)/e_std
     z_score_max = np.nanmax(z_score_all)
     
-    attack_label = attack_df.iloc[end_index-1]['Normal/Attack']
-
-    print(attack_label, z_score_max)
+    attack_label = attack_df.iloc[i]['Normal/Attack']
 
     if (not is_attack_period and attack_label == 'Attack'):
         is_attack_period = True
@@ -97,18 +97,24 @@ for i in range(len(attack_df)-window_size):
         is_attack_period = False
 
     if z_score_max > threshold:
+        print(attack_label, z_score_max)
         consecutive_counter += 1
 
     else:
         if consecutive_counter > time_threshold:
-            start_attack = attack_df.index[end_index-consecutive_counter]
-            end_attack = attack_df.index[end_index]
+            start_attack = attack_df.index[i-consecutive_counter]
+            end_attack = attack_df.index[i]
             attack_df.loc[start_attack:end_attack, "Prediction"] = "Attack"
 
             if attack_label == 'Attack':
                 attack_detected.add(attack_number)
 
         consecutive_counter = 0
+
+if consecutive_counter > time_threshold:
+    start_attack = attack_df.index[len(attack_data)-consecutive_counter-1]
+    end_attack = attack_df.index[len(attack_data)-1]
+    attack_df.loc[start_attack:end_attack, "Prediction"] = "Attack"
 
 if consecutive_counter > time_threshold:
     start_attack = attack_df.index[len(attack_data)-consecutive_counter-1]
@@ -137,9 +143,9 @@ print("F1 Score:", f1_score(real_value, predicted_value))
 fpr, tpr, thresholds = roc_curve(real_value, predicted_value)
 print("AUC:", auc(fpr, tpr))
 
-joblib.dump(scaler, f"scaler/pca-{window_size}.gz")
-np.save(f"npy/pca/mean-{window_size}", e_mean)
-np.save(f"npy/pca/std-{window_size}", e_std)
-joblib.dump(pca, f"model/pca-{window_size}")
+# joblib.dump(scaler, f"scaler/pca-{window_size}.gz")
+# np.save(f"npy/pca/mean-{window_size}", e_mean)
+# np.save(f"npy/pca/std-{window_size}", e_std)
+# joblib.dump(pca, f"model/pca-{window_size}")
 
-attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/pca-{window_size}-{threshold}-{time_threshold}.csv")
+# attack_df[["Normal/Attack", "Prediction"]].to_csv(f"dataset/result/pca-{window_size}-{threshold}-{time_threshold}.csv")
