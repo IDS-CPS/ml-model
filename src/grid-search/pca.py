@@ -24,17 +24,6 @@ n = len(df)
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
 
-features_considered = []
-for column in df.columns:
-  ks_result = stats.ks_2samp(train_df[column],test_df[column])
-  print(column, ks_result)
-  if (ks_result.statistic < 0.2):
-    features_considered.append(column)
-
-df = df[features_considered]
-train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
-
 scaler = MinMaxScaler()
 scaler = scaler.fit(df)
 

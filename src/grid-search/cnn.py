@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dropout, Dens
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
-parser.add_argument("-d", "--dataset", default="dataset/pompa-v2.csv", type=str)
+parser.add_argument("-d", "--dataset", default="dataset/swat-p1.csv", type=str)
 parser.add_argument("-ht", "--history", default=10, type=int)
 
 args = parser.parse_args()
@@ -22,18 +22,7 @@ df = df.drop("timestamp", axis=1)
 
 n = len(df)
 train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
-
-features_considered = []
-for column in df.columns:
-  ks_result = stats.ks_2samp(train_df[column],test_df[column])
-  print(column, ks_result)
-  if (ks_result.statistic < 0.2):
-    features_considered.append(column)
-
-df = df[features_considered]
-train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
+val_df = df[int(n*0.8):]
 
 print("Features used: ", df.columns)
 print(len(df.columns))
@@ -42,12 +31,12 @@ scaler = MinMaxScaler()
 scaler.fit(train_df)
 
 train_data = scaler.transform(train_df)
-test_data = scaler.transform(test_df)
+val_data = scaler.transform(val_df)
 
 history_size = args.history
 
 x_train, y_train = util.create_sequences(train_data, history_size)
-x_test, y_test = util.create_sequences(test_data, history_size)
+x_val, y_val = util.create_sequences(val_data, history_size)
 
 print("Training input shape: ", x_train.shape, y_train.shape)
 
@@ -76,7 +65,7 @@ def create_model(n_filter=32, dropout_rate=0.5, kernel_size=2, pool_size=2):
 
 
 n_filters = [16, 32, 64]
-dropout_rate = [0.1]
+dropout_rate = [0.1, 0.3, 0.5, 0.7]
 kernel_size = [2]
 pool_size = [2]
 
@@ -91,13 +80,15 @@ for param in params:
     steps_per_epoch=100,
   )
 
+  loss, mean_error = model.evaluate(x_val, y_val)
+
   grid_results.append({
     "n_filter": param[0],
     "dropout_rate": param[1],
     "kernel_size": param[2],
     "pool_size": param[3],
-    "loss": history.history["loss"][0],
-    "mae": history.history["mean_absolute_error"][0]
+    "loss": loss,
+    "mae": mean_error
   })
 
 df = pd.DataFrame.from_dict(grid_results)
