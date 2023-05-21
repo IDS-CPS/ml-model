@@ -1,10 +1,19 @@
 source env/Scripts/activate
-python src/sliding-window/attack.py -t 10 -th 6 -ht 10 -m cnn > logs/swat/attack-cnn-10-10-6.log
-python src/sliding-window/attack.py -t 9 -th 6 -ht 10 -m cnn > logs/swat/attack-cnn-10-9-6.log
-python src/sliding-window/attack.py -t 8 -th 6 -ht 10 -m cnn > logs/swat/attack-cnn-10-8-6.log
-python src/sliding-window/attack.py -t 10 -th 6 -ht 10 -m lstm > logs/swat/attack-lstm-10-10-6.log
-python src/sliding-window/attack.py -t 9 -th 6 -ht 10 -m lstm > logs/swat/attack-lstm-10-9-6.log
-python src/sliding-window/attack.py -t 8 -th 6 -ht 10 -m lstm > logs/swat/attack-lstm-10-8-6.log
-python src/sliding-window/attack.py -t 10 -th 6 -ht 20 -m lstm > logs/swat/attack-lstm-20-10-6.log
-python src/sliding-window/attack.py -t 9 -th 6 -ht 20 -m lstm > logs/swat/attack-lstm-20-9-6.log
-python src/sliding-window/attack.py -t 8 -th 6 -ht 20 -m lstm > logs/swat/attack-lstm-20-8-6.log
+python src/tumbling-window/pca/pca.py -t 5 -th 5 -w 5 > logs/swat/attack-pca-5-5-5.log
+python src/tumbling-window/pca/pca.py -t 5 -th 6 -w 5 > logs/swat/attack-pca-5-5-6.log
+python src/tumbling-window/pca/pca.py -t 6 -th 5 -w 5 > logs/swat/attack-pca-5-6-5.log
+python src/tumbling-window/pca/pca.py -t 6 -th 6 -w 5 > logs/swat/attack-pca-5-6-6.log
+python src/tumbling-window/pca/pca.py -t 7 -th 5 -w 5 > logs/swat/attack-pca-5-7-5.log
+python src/tumbling-window/pca/pca.py -t 7 -th 6 -w 5 > logs/swat/attack-pca-5-7-6.log
+python src/tumbling-window/pca/pca.py -t 5 -th 5 -w 10 > logs/swat/attack-pca-10-5-5.log
+python src/tumbling-window/pca/pca.py -t 5 -th 6 -w 10 > logs/swat/attack-pca-10-5-6.log
+python src/tumbling-window/pca/pca.py -t 6 -th 5 -w 10 > logs/swat/attack-pca-10-6-5.log
+python src/tumbling-window/pca/pca.py -t 6 -th 6 -w 10 > logs/swat/attack-pca-10-6-6.log
+python src/tumbling-window/pca/pca.py -t 7 -th 5 -w 10 > logs/swat/attack-pca-10-7-5.log
+python src/tumbling-window/pca/pca.py -t 7 -th 6 -w 10 > logs/swat/attack-pca-10-7-6.log
+python src/tumbling-window/pca/pca.py -t 5 -th 5 -w 20 > logs/swat/attack-pca-20-5-5.log
+python src/tumbling-window/pca/pca.py -t 5 -th 6 -w 20 > logs/swat/attack-pca-20-5-6.log
+python src/tumbling-window/pca/pca.py -t 6 -th 5 -w 20 > logs/swat/attack-pca-20-6-5.log
+python src/tumbling-window/pca/pca.py -t 6 -th 6 -w 20 > logs/swat/attack-pca-20-6-6.log
+python src/tumbling-window/pca/pca.py -t 7 -th 5 -w 20 > logs/swat/attack-pca-20-7-5.log
+python src/tumbling-window/pca/pca.py -t 7 -th 6 -w 20 > logs/swat/attack-pca-20-7-6.log
