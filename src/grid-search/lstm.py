@@ -6,7 +6,7 @@ import util
 
 from argparse import ArgumentParser
 from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.layers import LSTM, Dense, Bidirectional
+from tensorflow.keras.layers import LSTM, Dense
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
@@ -17,6 +17,8 @@ args = parser.parse_args()
 
 df = pd.read_csv(args.dataset)
 df = df[16000:]
+df.columns = [column.strip() for column in df.columns]
+df = df.drop('Unnamed: 0', axis=1)
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 df = df[::5]
@@ -44,9 +46,6 @@ print("Training input shape: ", x_train.shape)
 train_tensor = tf.data.Dataset.from_tensor_slices((x_train, y_train))
 train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
 
-val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
-val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
-
 def create_model(n_units=32):
   model = tf.keras.models.Sequential()
   model.add(LSTM(n_units, return_sequences=True, input_shape=x_train.shape[1:]))
@@ -68,10 +67,7 @@ for unit in n_units:
   history = model.fit(
     train_tensor, 
     epochs=args.epoch,
-    steps_per_epoch=100,
-    validation_data=val_tensor,
-    validation_steps=50,
-    callbacks=[early_stopping]
+    steps_per_epoch=100
   )
 
   loss, mean_error = model.evaluate(x_test, y_test)

@@ -19,6 +19,8 @@ print(args)
 
 df = pd.read_csv(args.dataset)
 df = df[16000:]
+df.columns = [column.strip() for column in df.columns]
+df = df.drop('Unnamed: 0', axis=1)
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 df = df[::5]
@@ -54,7 +56,9 @@ for ratio in components_ratio:
     attack_df = attack_df.set_index("Timestamp")
     attack_df = attack_df[::5]
 
-    attack_df = attack_df[df.columns]
+    used_columns = list(df.columns)
+    used_columns.append("Normal/Attack")
+    attack_df = attack_df[used_columns]
     attack_data = scaler.transform(attack_df.drop("Normal/Attack", axis=1))
 
     window_size = args.window
@@ -133,7 +137,7 @@ for ratio in components_ratio:
 
     grid_results.append({
         "ratio": ratio,
-        "attack_detected": attack_detected,
+        "attack_detected": len(attack_detected),
         "precision": precision_score(real_value, predicted_value),
         "recall": recall_score(real_value, predicted_value),
         "f1_score": f1_score(real_value, predicted_value),
@@ -141,6 +145,6 @@ for ratio in components_ratio:
     })
 
 df = pd.DataFrame.from_dict(grid_results)
-df = df.sort_values(by=["attack_detected", "recall", "auc"])
+df = df.sort_values(by=["attack_detected", "recall", "auc"], ascending=False)
 
 print(df.to_string())
