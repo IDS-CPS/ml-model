@@ -18,7 +18,8 @@ args = parser.parse_args()
 df = pd.read_csv(args.dataset)
 df = df[16000:]
 df.columns = [column.strip() for column in df.columns]
-df = df.drop('Unnamed: 0', axis=1)
+print(df.columns)
+# df = df.drop('Unnamed: 0.1', axis=1)
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
 df = df[::5]
@@ -50,7 +51,7 @@ def create_model(n_units=32):
   model = tf.keras.models.Sequential()
   model.add(LSTM(n_units, return_sequences=True, input_shape=x_train.shape[1:]))
   model.add(LSTM(n_units, return_sequences=True))
-  model.add(LSTM(n_units, return_sequences=True))
+  model.add(LSTM(n_units))
   model.add(Dense(units=x_train.shape[2]))
 
   model.compile(loss=tf.keras.losses.MeanSquaredError(),
