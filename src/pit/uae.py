@@ -46,11 +46,11 @@ class Decoder(layers.Layer):
     return self.output_layer(activation)
 
 class Autoencoder(tf.keras.Model):
-  def __init__(self, train_shape):
+  def __init__(self, train_shape, compact_ratio):
     super(Autoencoder, self).__init__()
     self.train_shape = train_shape
-    self.encoder = Encoder(intermediate_dim=0.5*train_shape[1]*train_shape[2])
-    self.decoder = Decoder(original_dim=train_shape[1]*train_shape[2], intermediate_dim=0.5*train_shape[1]*train_shape[2])
+    self.encoder = Encoder(intermediate_dim=compact_ratio*train_shape[1]*train_shape[2])
+    self.decoder = Decoder(original_dim=train_shape[1]*train_shape[2], intermediate_dim=compact_ratio*train_shape[1]*train_shape[2])
     self.target_output = layers.Dense(train_shape[2])
 
   def call(self, input_features):
@@ -62,6 +62,7 @@ parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
 parser.add_argument("-d", "--dataset", default="dataset/swat-minimized.csv", type=str)
 parser.add_argument("-ht", "--history", default=10, type=int)
+parser.add_argument("-c", "--compact", default=0.5, type=float)
 
 args = parser.parse_args()
 
@@ -71,15 +72,7 @@ df = pd.read_csv(args.dataset)
 df = df.drop("timestamp", axis=1)
 
 n = len(df)
-train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
-
-features_considered = []
-for column in df.columns:
-  ks_result = stats.ks_2samp(train_df[column],test_df[column])
-  print(column, ks_result)
-  if (ks_result.statistic < 0.2):
-    features_considered.append(column)
+features_considered = ['adc_level', 'adc_flow', 'adc_pressure_left', 'adc_pressure_right', 'level', 'flow', 'pressure_left', 'pressure_right']
 
 df = df[features_considered]
 train_df = df[0:int(n*0.8)]
@@ -108,9 +101,9 @@ train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
 val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
 
-model = Autoencoder(x_train.shape)
+model = Autoencoder(x_train.shape, args.compact)
 
-early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=20, mode='min', verbose=1)
+early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=50, mode='min', verbose=1)
 
 model.compile(loss=tf.keras.losses.MeanSquaredError(),
                 optimizer=tf.keras.optimizers.experimental.AdamW(),
@@ -119,17 +112,16 @@ model.compile(loss=tf.keras.losses.MeanSquaredError(),
 history = model.fit(
     train_tensor, 
     epochs=args.epoch,
-    steps_per_epoch=100,
+    steps_per_epoch=300,
     validation_data=val_tensor,
-    validation_steps=50,
-    callbacks=[early_stopping]
+    validation_steps=100
 )
 
 loss, mae = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
-error_mean, error_std = util.calculate_error(model, train_data, history_size)
+error_mean, error_std = util.calculate_error(model, val_data, history_size)
 
 joblib.dump(scaler, f"scaler/pit/uae-{history_size}.gz")
 np.save(f"npy/pit/uae/mean-{history_size}", error_mean)

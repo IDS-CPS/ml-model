@@ -12,11 +12,12 @@ parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
 parser.add_argument("-d", "--dataset", default="dataset/swat-minimized.csv", type=str)
 parser.add_argument("-ht", "--history", default=10, type=int)
+parser.add_argument("-n", "--units", default=100, type=int)
 
 args = parser.parse_args()
 
 df = pd.read_csv(args.dataset, delimiter=";", decimal=",")
-# df = df[16000:]
+df = df[16000:]
 df = df[::5]
 df = df.drop("Normal/Attack", axis=1)
 df = df.drop("Timestamp", axis=1)
@@ -54,12 +55,11 @@ train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
 val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
 
+n_units = args.units
 model = tf.keras.models.Sequential([ 
-    Bidirectional(LSTM(1024, return_sequences=True, input_shape=x_train.shape[1:])),
-    Bidirectional(LSTM(512, return_sequences=True)),
-    Bidirectional(LSTM(256, return_sequences=True)),
-    Bidirectional(LSTM(128, return_sequences=True)),
-    Bidirectional(LSTM(64)),
+    LSTM(n_units, return_sequences=True, input_shape=x_train.shape[1:]),
+    LSTM(n_units, return_sequences=True),
+    LSTM(n_units),
     Dense(x_train.shape[2]),
 ]) 
 
@@ -82,12 +82,12 @@ loss, mean_error = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
-model.save(f'model/lstm-{history_size}')
-joblib.dump(scaler, f"scaler/lstm-{history_size}.gz")
+model.save(f'model/lstm-new-{history_size}')
+joblib.dump(scaler, f"scaler/lstm-new-{history_size}.gz")
 
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
-np.save(f"npy/lstm/mean-{history_size}", error_mean)
-np.save(f"npy/lstm/std-{history_size}", error_std)
+np.save(f"npy/lstm-new/mean-{history_size}", error_mean)
+np.save(f"npy/lstm-new/std-{history_size}", error_std)
 
-util.plot_train_history(history, "Training vs Val Loss", f"plot/lstm-{history_size}.png")
+util.plot_train_history(history, "Training vs Val Loss", f"plot/lstm-new-{history_size}.png")
