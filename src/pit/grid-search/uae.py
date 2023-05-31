@@ -68,8 +68,8 @@ print("History size:", args.history)
 df = pd.read_csv(args.dataset)
 
 n = len(df)
-features_considered = ["adc_level",	"adc_flow",	"adc_pressure_left",	"adc_pressure_right"]
-df = df[features_considered]
+# features_considered = ["adc_level",	"adc_flow",	"adc_pressure_left",	"adc_pressure_right"]
+# df = df[features_considered]
 train_df = df[0:int(n*0.7)]
 val_df = df[int(n*0.7):]
 
@@ -96,7 +96,7 @@ train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
 val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
 
-compact_ratio = [0.3, 0.5, 0.7, 1]
+compact_ratio = [0.3, 0.5, 0.7, 0.9]
 
 grid_results = []
 for ratio in compact_ratio:
@@ -114,7 +114,11 @@ for ratio in compact_ratio:
       verbose=False
     )
 
-    loss, mae = model.evaluate(x_test, y_test, verbose=False)
+    loss, mae = model.evaluate(
+      x_test, 
+      y_test, 
+      verbose=False
+    )
     loss_total += loss
     mae_total += mae
 

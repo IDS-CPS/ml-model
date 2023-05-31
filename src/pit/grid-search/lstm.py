@@ -18,8 +18,6 @@ args = parser.parse_args()
 df = pd.read_csv(args.dataset)
 
 n = len(df)
-features_considered = ['adc_level', 'adc_flow', 'adc_pressure_left', 'adc_pressure_right', 'level', 'flow', 'pressure_left', 'pressure_right']
-df = df[features_considered]
 train_df = df[0:int(n*0.8)]
 val_df = df[int(n*0.8):]
 
@@ -59,23 +57,25 @@ n_units = [16, 32, 64, 100]
 grid_results = []
 
 for unit in n_units:
-  model = create_model(unit)
-  history = model.fit(
-    train_tensor, 
-    epochs=args.epoch,
-    steps_per_epoch=100,
-    verbose=False
-  )
+  loss_total = 0
+  mae_total = 0
+  for i in range(3):
+    model = create_model(unit)
+    history = model.fit(
+      train_tensor, 
+      epochs=args.epoch,
+      steps_per_epoch=100,
+      verbose=False
+    )
 
-  train_loss, train_mae = model.evaluate(x_train, y_train, verbose=False)
-  loss, mean_error = model.evaluate(x_test, y_test, verbose=False)
+    loss, mae = model.evaluate(x_test, y_test, verbose=False)
+    loss_total += loss
+    mae_total += mae
 
   grid_results.append({
     "n_units": unit,
-    "loss": loss,
-    "mae": mean_error,
-    "train_loss": train_loss,
-    "train_mae": train_mae
+    "loss": loss_total/3,
+    "mae": mae_total/3
   })
 
 df = pd.DataFrame.from_dict(grid_results)

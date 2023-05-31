@@ -66,17 +66,18 @@ args = parser.parse_args()
 
 print("History size:", args.history)
 
-df = pd.read_csv(args.dataset, delimiter=";", decimal=",")
-df = df[16000:]
-df = df[::5]
-df = df.drop("Normal/Attack", axis=1)
-df = df.drop("Timestamp", axis=1)
+df = pd.read_csv(args.dataset)
+# df = pd.read_csv(args.dataset, delimiter=";", decimal=",")
+# df = df[16000:]
+# df = df[::5]
+# df = df.drop("Normal/Attack", axis=1)
+# df = df.drop("Timestamp", axis=1)
 
-features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
-"AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
-"PIT501", "PIT502", "PIT503"]
+# features_dropped = ["AIT201", "AIT202", "AIT203", "P201", "AIT401",
+# "AIT402", "AIT501", "AIT502", 'AIT503', "AIT504", "FIT503", "FIT504",
+# "PIT501", "PIT502", "PIT503"]
 
-df = df.drop(columns=features_dropped)
+# df = df.drop(columns=features_dropped)
 
 n = len(df)
 train_df = df[0:int(n*0.8)]
@@ -126,11 +127,11 @@ loss, mae = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
-error_mean, error_std = util.calculate_error(model, train_data, history_size)
+error_mean, error_std = util.calculate_error(model, val_data, history_size)
 
-joblib.dump(scaler, f"scaler/uae-{history_size}.gz")
-np.save(f"npy/uae/mean-{history_size}", error_mean)
-np.save(f"npy/uae/std-{history_size}", error_std)
-model.save(f'model/uae-{history_size}')
+joblib.dump(scaler, f"scaler/uae-enhanced-{history_size}.gz")
+np.save(f"npy/uae/mean-enhanced-{history_size}", error_mean)
+np.save(f"npy/uae/std-enhanced-{history_size}", error_std)
+model.save(f'model/uae-enhanced-{history_size}')
 
-util.plot_train_history(history, "Training vs Val Loss", f"plot/uae-{history_size}.png")
+util.plot_train_history(history, "Training vs Val Loss", f"plot/uae-enhanced-{history_size}.png")

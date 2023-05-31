@@ -12,7 +12,7 @@ from tensorflow.keras.layers import Conv1D, MaxPooling1D, Flatten, Dropout, Dens
 
 parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
-parser.add_argument("-d", "--dataset", default="dataset/pompa-train.csv", type=str)
+parser.add_argument("-d", "--dataset", default="dataset/pompa-train-v2.csv", type=str)
 parser.add_argument("-ht", "--history", default=10, type=int)
 
 args = parser.parse_args()
@@ -21,9 +21,6 @@ df = pd.read_csv(args.dataset)
 
 n = len(df)
 
-features_considered = ['adc_level', 'adc_flow', 'adc_pressure_left', 'adc_pressure_right', 'level', 'flow', 'pressure_left', 'pressure_right']
-
-df = df[features_considered]
 train_df = df[0:int(n*0.8)]
 val_df = df[int(n*0.8):]
 
@@ -76,28 +73,29 @@ params = list(product(n_filters, dropout_rate, kernel_size, pool_size))
 
 grid_results = []
 for param in params:
-  model = create_model(n_filter=param[0], dropout_rate=param[1], kernel_size=param[2], pool_size=[3])
+  loss_total = 0
+  mae_total = 0
+  for i in range(3):
+    model = create_model(n_filter=param[0], dropout_rate=param[1], kernel_size=param[2], pool_size=[3])
 
-  model.summary()
-  history = model.fit(
-    train_tensor, 
-    epochs=args.epoch,
-    steps_per_epoch=100,
-    verbose=False
-  )
+    history = model.fit(
+      train_tensor, 
+      epochs=args.epoch,
+      steps_per_epoch=100,
+      verbose=False
+    )
 
-  train_loss, train_mae = model.evaluate(x_train, y_train, verbose=False)
-  loss, mean_error = model.evaluate(x_val, y_val, verbose=False)
+    loss, mae = model.evaluate(x_val, y_val, verbose=False)
+    loss_total += loss
+    mae_total += mae
 
   grid_results.append({
     "n_filter": param[0],
     "dropout_rate": param[1],
     "kernel_size": param[2],
     "pool_size": param[3],
-    "loss": loss,
-    "mae": mean_error,
-    "train_loss": train_loss,
-    "train_mae": train_mae
+    "loss": loss_total/3,
+    "mae": mae_total/3
   })
 
 df = pd.DataFrame.from_dict(grid_results)

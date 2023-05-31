@@ -12,19 +12,16 @@ parser = ArgumentParser()
 parser.add_argument("-e", "--epoch", default=1, type=int)
 parser.add_argument("-d", "--dataset", default="dataset/swat-minimized.csv", type=str)
 parser.add_argument("-ht", "--history", default=10, type=int)
+parser.add_argument("-n", "--n_units", type=int)
+parser.add_argument("-f", "--filename", default="lstm", type=str)
 
 args = parser.parse_args()
+print(args)
 
 df = pd.read_csv(args.dataset)
-df = df.drop("timestamp", axis=1)
 
 n = len(df)
-train_df = df[0:int(n*0.8)]
-test_df = df[int(n*0.8):]
 
-features_considered = ['adc_level', 'adc_flow', 'adc_pressure_left', 'adc_pressure_right', 'level', 'flow', 'pressure_left', 'pressure_right']
-
-df = df[features_considered]
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
 
@@ -50,13 +47,12 @@ train_tensor = train_tensor.cache().shuffle(50000).batch(256).repeat()
 val_tensor = tf.data.Dataset.from_tensor_slices((x_test, y_test))
 val_tensor = val_tensor.cache().shuffle(50000).batch(256).repeat()
 
+n_units = args.n_units
 model = tf.keras.models.Sequential([ 
-    Bidirectional(LSTM(1024, return_sequences=True, input_shape=x_train.shape[1:])),
-    Bidirectional(LSTM(512, return_sequences=True)),
-    Bidirectional(LSTM(256, return_sequences=True)),
-    Bidirectional(LSTM(128, return_sequences=True)),
-    Bidirectional(LSTM(64)),
-    Dense(x_train.shape[2]),
+  LSTM(n_units, return_sequences=True, input_shape=x_train.shape[1:]),
+  LSTM(n_units, return_sequences=True),
+  LSTM(n_units),
+  Dense(x_train.shape[2]),
 ]) 
 
 early_stopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=20, mode='min', verbose=1)
@@ -78,12 +74,12 @@ loss, mean_error = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
-model.save(f'model/lstm-{history_size}')
-joblib.dump(scaler, f"scaler/lstm-{history_size}.gz")
+model.save(f'model/pit/{args.filename}-{history_size}')
+joblib.dump(scaler, f"scaler/pit/{args.filename}-{history_size}.gz")
 
 error_mean, error_std = util.calculate_error(model, train_data, history_size)
 
-np.save(f"npy/lstm/mean-{history_size}", error_mean)
-np.save(f"npy/lstm/std-{history_size}", error_std)
+np.save(f"npy/pit/{args.filename}/mean-{history_size}", error_mean)
+np.save(f"npy/pit/{args.filename}/std-{history_size}", error_std)
 
-util.plot_train_history(history, "Training vs Val Loss", f"plot/lstm-{history_size}.png")
+util.plot_train_history(history, "Training vs Val Loss", f"plot/pit/{args.filename}-{history_size}.png")

@@ -6,10 +6,8 @@ import joblib
 import util
 
 from argparse import ArgumentParser
-from scipy import stats
 from sklearn.preprocessing import MinMaxScaler
 from tensorflow.keras import layers
-from scipy import stats
 
 class Encoder(layers.Layer):
   def __init__(self, intermediate_dim=32):
@@ -63,18 +61,17 @@ parser.add_argument("-e", "--epoch", default=1, type=int)
 parser.add_argument("-d", "--dataset", default="dataset/swat-minimized.csv", type=str)
 parser.add_argument("-ht", "--history", default=10, type=int)
 parser.add_argument("-c", "--compact", default=0.5, type=float)
+parser.add_argument("-f", "--filename", default="uae", type=str)
 
 args = parser.parse_args()
 
+print(args)
 print("History size:", args.history)
 
 df = pd.read_csv(args.dataset)
-df = df.drop("timestamp", axis=1)
 
 n = len(df)
-features_considered = ['adc_level', 'adc_flow', 'adc_pressure_left', 'adc_pressure_right', 'level', 'flow', 'pressure_left', 'pressure_right']
 
-df = df[features_considered]
 train_df = df[0:int(n*0.8)]
 test_df = df[int(n*0.8):]
 
@@ -121,11 +118,12 @@ loss, mae = model.evaluate(x_test, y_test)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mae}")
 
+model.save(f'model/pit/{args.filename}-{history_size}')
+joblib.dump(scaler, f"scaler/pit/{args.filename}-{history_size}.gz")
+
 error_mean, error_std = util.calculate_error(model, val_data, history_size)
 
-joblib.dump(scaler, f"scaler/pit/uae-{history_size}.gz")
-np.save(f"npy/pit/uae/mean-{history_size}", error_mean)
-np.save(f"npy/pit/uae/std-{history_size}", error_std)
-model.save(f'model/pit/uae-{history_size}')
+np.save(f"npy/pit/{args.filename}/mean-{history_size}", error_mean)
+np.save(f"npy/pit/{args.filename}/std-{history_size}", error_std)
 
-util.plot_train_history(history, "Training vs Val Loss", f"plot/uae-pit-{history_size}.png")
+util.plot_train_history(history, "Training vs Val Loss", f"plot/pit/{args.filename}-{history_size}.png")
