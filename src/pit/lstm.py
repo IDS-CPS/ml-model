@@ -32,7 +32,7 @@ scaler = MinMaxScaler()
 scaler.fit(train_df)
 
 train_data = scaler.transform(train_df)
-test_data = scaler.transform(test_df)
+val_data = scaler.transform(test_df)
 
 history_size = args.history
 
@@ -77,7 +77,7 @@ print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 model.save(f'model/pit/{args.filename}-{history_size}')
 joblib.dump(scaler, f"scaler/pit/{args.filename}-{history_size}.gz")
 
-error_mean, error_std = util.calculate_error(model, train_data, history_size)
+error_mean, error_std = util.calculate_error(model, val_data, history_size)
 
 np.save(f"npy/pit/{args.filename}/mean-{history_size}", error_mean)
 np.save(f"npy/pit/{args.filename}/std-{history_size}", error_std)
