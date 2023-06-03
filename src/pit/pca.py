@@ -9,7 +9,7 @@ from sklearn.metrics import f1_score, precision_score, recall_score, auc, roc_cu
 
 parser = ArgumentParser()
 parser.add_argument("-d", "--dataset", default="dataset/swat-2015-data.csv", type=str)
-parser.add_argument("-w", "--window", default=10, type=int)
+parser.add_argument("-w", "--window_size", default=10, type=int)
 parser.add_argument("-t", "--threshold", default=7, type=int)
 parser.add_argument("-th", "--timethreshold", default=6, type=int)
 parser.add_argument("-n", "--n_units", type=int)
