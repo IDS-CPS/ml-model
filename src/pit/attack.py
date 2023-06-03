@@ -83,6 +83,8 @@ if consecutive_counter > time_threshold:
     df.loc[start_attack:end_attack, "Prediction"] = "Attack"
 
 attack_df = df[history_size+1:]
+attack_df.to_csv(f"dataset/pit/test-{args.model}-{history_size}-{threshold}-{time_threshold}.csv")
+
 real_value = attack_df["Class"].to_numpy()
 real_value[real_value == "Normal"] = 0
 real_value[(real_value == "Attack")] = 1
@@ -103,8 +105,6 @@ print("F1 Score:", f1_score(real_value, predicted_value))
 fpr, tpr, thresholds = roc_curve(real_value, predicted_value)
 print("AUC:", auc(fpr, tpr))
 
-# np_arr = np.array(prediction_arr)
-# prediction_df = pd.DataFrame(np_arr, columns = ["adc_level","adc_temp","adc_flow","adc_pressure_left","adc_pressure_right"])
-# prediction_df.to_csv("dataset/pit/test-predict.csv", index=False)
-
-df.to_csv(f"dataset/pit/{args.model}-{history_size}-{threshold}-{time_threshold}.csv")
+np_arr = np.array(prediction_arr)
+prediction_df = pd.DataFrame(np_arr, columns = ["adc_level","adc_temp","adc_flow","adc_pressure_left","adc_pressure_right"])
+prediction_df.to_csv("dataset/pit/test-predict.csv", index=False)
