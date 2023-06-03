@@ -7,11 +7,11 @@ import joblib
 import tempfile
 import zipfile
 
-minio_url = "localhost:9000"
+minio_url = "10.8.1.146:9000"
 client = Minio(
     minio_url,
-    access_key="admin",
-    secret_key="password",
+    access_key="qeB0URQA8q2MkmoRM1zB",
+    secret_key="beO0B4CKkMl20bqZYA15yeP093UeLURfbtFIxfWR",
     secure=False
 )
 
@@ -22,7 +22,7 @@ def load_joblib(url, r):
         test = joblib.load(tmp)
         print(test)
 
-def load_model(url, r):
+def load_model(r):
     with tempfile.TemporaryDirectory() as td:
         f_name = os.path.join(td, 'tmp.zip')
         open(f_name, 'wb').write(r.content)
@@ -32,17 +32,18 @@ def load_model(url, r):
         # Load the keras model from the temporary directory
         return tf.keras.models.load_model(f"{td}/tmp-model")
 
-url = client.presigned_get_object("ids", "pompa-v2.csv")
+url = client.presigned_get_object("learning-model-bucket", "scaler/cnn-40.gz")
 print(url)
-# url = client.presigned_get_object("ids", "npy/mean.gz")
-# print(url)
-# url = client.presigned_get_object("ids", "npy/std.gz")
-# print(url)
-# url = client.presigned_get_object("ids", "scaler/uae.gz")
-# print(url)
+url = client.presigned_get_object("learning-model-bucket", "npy/cnn/mean-40.gz")
+print(url)
+url = client.presigned_get_object("learning-model-bucket", "npy/cnn/std-40.gz")
+print(url)
+url = client.presigned_get_object("learning-model-bucket", "model/cnn-40.gz")
+print(url)
+
 # r = requests.get(url)
 
-# model = load_model(url, r)
+# model = load_model(r)
 # print(model.summary())
 # test = joblib.load("test.npy")
 # print(test)
