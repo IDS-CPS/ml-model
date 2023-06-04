@@ -49,17 +49,17 @@ for filename in os.listdir("dataset/prediction"):
 
         # Check true positives and false positives
         if is_attack_period and row["Prediction"] == 0:
-            if skip_counter > 30:
+            if skip_counter >= 30:
                 is_attack_period = False
                 prediction = df.loc[start_period:index-1, "Prediction"].to_numpy()
                 data_class = df.loc[start_period:index-1, "Class"].to_numpy()
                 intersect = np.intersect1d(prediction, data_class)
 
                 if 1 in intersect:
-                    print(f"tp at {start_period}-{index-1}")
+                    # print(f"tp at {start_period}-{index-1}")
                     tp += 1
                 else:
-                    print(f"fp at {start_period}-{index-1}")
+                    # print(f"fp at {start_period}-{index-1}")
                     fp += 1
 
             skip_counter += 1
@@ -95,7 +95,6 @@ for filename in os.listdir("dataset/prediction"):
         "fn": fn,
         "fp": fp
     })
-    break
 
 df = pd.DataFrame.from_dict(metrics)
 df = df.sort_values(by=["f1_score", "precision"], ascending=False)
