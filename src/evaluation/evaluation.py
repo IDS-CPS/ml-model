@@ -12,8 +12,8 @@ def f1_score(precision, recall):
     return (2*precision*recall)/(precision+recall)
 
 metrics = []
-for filename in os.listdir("dataset/prediction"):
-    df = pd.read_csv(f"dataset/prediction/{filename}")
+for filename in os.listdir("dataset/prediction-swat"):
+    df = pd.read_csv(f"dataset/prediction-swat/{filename}")
     
     tp = 0
     fp = 0
@@ -25,14 +25,14 @@ for filename in os.listdir("dataset/prediction"):
     skip_counter = 0
     for index, row in df.iterrows():
         # Check false negatives
-        if not real_attack and row["Class"] == 1:
+        if not real_attack and row["Normal/Attack"] == 1:
             start_real_attack = index
             real_attack = True
 
-        if real_attack and row["Class"] == 0:
+        if real_attack and row["Normal/Attack"] == 0:
             real_attack = False
             prediction = df.loc[start_real_attack:index-1, "Prediction"].to_numpy()
-            data_class = df.loc[start_real_attack:index-1, "Class"].to_numpy()
+            data_class = df.loc[start_real_attack:index-1, "Normal/Attack"].to_numpy()
             intersect = np.intersect1d(prediction, data_class)
             if 1 not in intersect:
                 # print(prediction)
@@ -52,7 +52,7 @@ for filename in os.listdir("dataset/prediction"):
             if skip_counter >= 30:
                 is_attack_period = False
                 prediction = df.loc[start_period:index-1, "Prediction"].to_numpy()
-                data_class = df.loc[start_period:index-1, "Class"].to_numpy()
+                data_class = df.loc[start_period:index-1, "Normal/Attack"].to_numpy()
                 intersect = np.intersect1d(prediction, data_class)
 
                 if 1 in intersect:
@@ -66,7 +66,7 @@ for filename in os.listdir("dataset/prediction"):
 
     if is_attack_period:
         prediction = df.loc[start_period:index-1, "Prediction"].to_numpy()
-        data_class = df.loc[start_period:index-1, "Class"].to_numpy()
+        data_class = df.loc[start_period:index-1, "Normal/Attack"].to_numpy()
         intersect = np.intersect1d(prediction, data_class)
 
         if 1 in intersect:
@@ -78,7 +78,7 @@ for filename in os.listdir("dataset/prediction"):
 
     if real_attack:
         prediction = df.loc[start_real_attack:index-1, "Prediction"].to_numpy()
-        data_class = df.loc[start_real_attack:index-1, "Class"].to_numpy()
+        data_class = df.loc[start_real_attack:index-1, "Normal/Attack"].to_numpy()
         intersect = np.intersect1d(prediction, data_class)
         if 1 not in intersect:
             # print(f"fn at {start_real_attack}-{index-1}")

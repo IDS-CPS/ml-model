@@ -25,7 +25,7 @@ train_df = df[0:int(n*0.8)]
 val_df = df[int(n*0.8):]
 
 scaler = MinMaxScaler()
-scaler = scaler.fit(df)
+scaler = scaler.fit(train_df)
 
 train_data = scaler.transform(train_df)
 val_data = scaler.transform(val_df)

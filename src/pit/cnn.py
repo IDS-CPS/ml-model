@@ -19,7 +19,9 @@ parser.add_argument("-dr", "--dropout", type=float)
 args = parser.parse_args()
 print(args)
 
+
 df = pd.read_csv(args.dataset)
+df = df[["adc_flow", "adc_level", "adc_temp", "adc_pressure_right", "adc_pressure_left"]]
 
 n = len(df)
 
@@ -83,12 +85,12 @@ loss, mean_error = model.evaluate(x_val, y_val)
 
 print(f"Loss: {loss}, Mean Absolute Error: {mean_error}")
 
-model.save(f'model/pit/{args.filename}-{history_size}')
-joblib.dump(scaler, f"scaler/pit/{args.filename}-{history_size}.gz")
+# model.save(f'model/pit/{args.filename}-{history_size}')
+# joblib.dump(scaler, f"scaler/pit/{args.filename}-{history_size}.gz")
 
 error_mean, error_std = util.calculate_error(model, val_data, history_size)
 
-np.save(f"npy/pit/{args.filename}/mean-{history_size}", error_mean)
-np.save(f"npy/pit/{args.filename}/std-{history_size}", error_std)
+# np.save(f"npy/pit/{args.filename}/mean-{history_size}", error_mean)
+# np.save(f"npy/pit/{args.filename}/std-{history_size}", error_std)
 
-util.plot_train_history(history, "Training vs Val Loss", f"plot/pit/{args.filename}-{history_size}.png")
+# util.plot_train_history(history, "Training vs Val Loss", f"plot/pit/{args.filename}-{history_size}.png")
